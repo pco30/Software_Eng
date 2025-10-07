@@ -1,0 +1,8 @@
+# Build products
+/build/
+bin/
+obj/
+
+# Visual studio debris
+.vs*/
+*.csproj.user
