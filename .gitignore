@@ -6,3 +6,4 @@ obj/
 # Visual studio debris
 .vs*/
 *.csproj.user
+packages/

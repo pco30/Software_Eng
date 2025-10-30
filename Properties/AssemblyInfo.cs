@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("WinChangeMonitor")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HP")]
+[assembly: AssemblyCompany("Boston University")]
 [assembly: AssemblyProduct("WinChangeMonitor")]
-[assembly: AssemblyCopyright("Copyright © HP 2025")]
+[assembly: AssemblyCopyright("Copyright © Boston University 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

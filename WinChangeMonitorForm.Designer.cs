@@ -53,6 +53,7 @@
             this.gbFileSystemMonitor = new System.Windows.Forms.GroupBox();
             this.bStartFresh = new System.Windows.Forms.Button();
             this.bwPostInstall = new System.ComponentModel.BackgroundWorker();
+            this.bwLoader = new System.ComponentModel.BackgroundWorker();
             this.gbRegistryMonitor.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvKeysToTrack)).BeginInit();
             this.gbServicesMonitor.SuspendLayout();
@@ -318,6 +319,11 @@
             this.bwPostInstall.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bwPostInstall_DoWork);
             this.bwPostInstall.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.bwPostInstall_RunWorkerCompleted);
             // 
+            // bwLoader
+            // 
+            this.bwLoader.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bwLoader_DoWork);
+            this.bwLoader.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.bwLoader_RunWorkerCompleted);
+            // 
             // WinChangeMonitorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -333,6 +339,7 @@
             this.Controls.Add(this.gbFileSystemMonitor);
             this.Name = "WinChangeMonitorForm";
             this.ShowIcon = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "WinChangeMonitor - BU MET CS 673/473 Group #3 - Fall 2025";
             this.Load += new System.EventHandler(this.WinChangeMonitorForm_Load);
             this.gbRegistryMonitor.ResumeLayout(false);
@@ -353,7 +360,7 @@
         private System.ComponentModel.BackgroundWorker bwPreInstall;
         private System.Windows.Forms.TextBox tbOutput;
         private System.Windows.Forms.Button bPostInstall;
-        private System.Windows.Forms.Label lStatus;
+        public System.Windows.Forms.Label lStatus;
         private System.Windows.Forms.GroupBox gbRegistryMonitor;
         private System.Windows.Forms.CheckBox cbRegistryMonitor;
         private System.Windows.Forms.DataGridView dgvKeysToTrack;
@@ -373,6 +380,7 @@
         private System.Windows.Forms.DataGridViewCheckBoxColumn dataGridViewCheckBoxColumn1;
         private System.Windows.Forms.Button bStartFresh;
         private System.ComponentModel.BackgroundWorker bwPostInstall;
+        private System.ComponentModel.BackgroundWorker bwLoader;
     }
 }
 

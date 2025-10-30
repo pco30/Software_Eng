@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.IO;
 using System.Security;
 using System.ServiceProcess;
@@ -12,17 +11,9 @@ namespace WinChangeMonitor
 {
     public partial class WinChangeMonitorForm : Form
     {
-        private DataTable dtFoldersToTrack = new DataTable();
-        private DataTable dtKeysToTrack = new DataTable();
-        private SortedDictionary<String, Boolean> folderContentsPreInstall = new SortedDictionary<String, Boolean>(); // key is full path to file/folder, value is whether this is a folder or file (true if folder, false if file)
-        private SortedDictionary<String, RegistryEntryInfo> registryContentsPreInstall = new SortedDictionary<String, RegistryEntryInfo>();
-        private SortedDictionary<String, ServiceInfo> servicesPreInstall = new SortedDictionary<String, ServiceInfo>();
         private DateTime? preInstallFoldersStarted = null;
-        private DateTime? preInstallFoldersFinished = null;
         private DateTime? preInstallRegistryStarted = null;
-        private DateTime? preInstallRegistryFinished = null;
         private DateTime? preInstallServicesStarted = null;
-        private DateTime? preInstallServicesFinished = null;
         private SortedDictionary<String, Boolean> folderContentsAdded = new SortedDictionary<String, Boolean>();
         private SortedDictionary<String, Boolean> folderContentsModified = new SortedDictionary<String, Boolean>();
         private SortedDictionary<String, RegistryEntryInfo> registryContentsAdded = new SortedDictionary<String, RegistryEntryInfo>();
@@ -38,16 +29,13 @@ namespace WinChangeMonitor
         private DateTime? postInstallServicesStarted = null;
         private DateTime? postInstallServicesFinished = null;
 
+        public static SplashScreenForm SplashScreen { get; private set; } = new SplashScreenForm();
+
         private static String HKCR = "HKEY_CLASSES_ROOT";
         private static String HKCU = "HKEY_CURRENT_USER";
         private static String HKLM = "HKEY_LOCAL_MACHINE";
         private static String HKU = "HKEY_USERS";
         private static String HKCC = "HKEY_CURRENT_CONFIG";
-
-        private void HandleException(Exception ex)
-        {
-            MessageBox.Show($"{ex.Message}{Environment.NewLine}{ex.StackTrace}");
-        }
 
         public WinChangeMonitorForm()
         {
@@ -57,7 +45,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -65,41 +53,18 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.cbFileSystemMonitor.Checked = false;
-                this.dgvFoldersToTrack.Visible = this.bAddFolder.Visible = this.bRemoveFolder.Visible = false;
-                this.cbRegistryMonitor.Checked = false;
-                this.dgvKeysToTrack.Visible = this.bAddKey.Visible = this.bRemoveKey.Visible = false;
-                this.cbServicesMonitor.Checked = false;
-
-                this.bPreInstall.Enabled = false;
-
-                this.dtFoldersToTrack.Columns.Add("Folder");
-                this.dtFoldersToTrack.Columns.Add("IncludeSubDirectories");
-
-                this.dtFoldersToTrack.Rows.Add(@"C:\", false);
-
-                this.dgvFoldersToTrack.DataSource = this.dtFoldersToTrack;
-
-                this.dtKeysToTrack.Columns.Add("Key");
-                this.dtKeysToTrack.Columns.Add("IncludeSubKeys");
-
-                this.dtKeysToTrack.Rows.Add(HKCR, false);
-                this.dtKeysToTrack.Rows.Add(HKCU, false);
-                this.dtKeysToTrack.Rows.Add(HKLM, false);
-                this.dtKeysToTrack.Rows.Add(HKU, false);
-                this.dtKeysToTrack.Rows.Add(HKCC, false);
-
-                this.dgvKeysToTrack.DataSource = this.dtKeysToTrack;
-
                 this.MinimumSize = this.Size;
 
                 this.fbdAddFolder.ShowNewFolderButton = false;
                 this.fbdAddFolder.RootFolder = Environment.SpecialFolder.MyComputer;
-                
+
+                SplashScreen.Show(this);
+
+                this.bwLoader.RunWorkerAsync();
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -118,7 +83,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -126,7 +91,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                ControlSetText(this.lStatus, directory);
+                Utilities.ControlSetText(this.lStatus, directory);
 
                 try
                 {
@@ -134,14 +99,14 @@ namespace WinChangeMonitor
 
                     foreach (String file in files)
                     {
-                        this.folderContentsPreInstall[file] = false;
+                        RetainedSettings.FileSystemInventory[file] = false;
                     }
 
                     String[] subDirectories = Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly);
 
                     foreach (String subDirectory in subDirectories)
                     {
-                        this.folderContentsPreInstall[subDirectory] = true;
+                        RetainedSettings.FileSystemInventory[subDirectory] = true;
 
                         if (recursive)
                         {
@@ -153,7 +118,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -161,7 +126,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                ControlSetText(this.lStatus, key.ToString());
+                Utilities.ControlSetText(this.lStatus, key.ToString());
 
                 String[] valueNames = key.GetValueNames();
 
@@ -171,9 +136,9 @@ namespace WinChangeMonitor
                 {
                     fullPath = $@"{key.Name}\{valueName}";
 
-                    if (!this.registryContentsPreInstall.ContainsKey(fullPath))
+                    if (!RetainedSettings.RegistryInventory.ContainsKey(fullPath))
                     {
-                        this.registryContentsPreInstall[fullPath] = new RegistryEntryInfo(key.GetValueKind(valueName), key.GetValue(valueName)?.ToString());
+                        RetainedSettings.RegistryInventory[fullPath] = new RegistryEntryInfo(key.GetValueKind(valueName), key.GetValue(valueName)?.ToString());
                     }
                 }
 
@@ -183,9 +148,9 @@ namespace WinChangeMonitor
                 {
                     fullPath = $@"{key.Name}\{subkeyName}";
 
-                    if (!this.registryContentsPreInstall.ContainsKey(fullPath))
+                    if (!RetainedSettings.RegistryInventory.ContainsKey(fullPath))
                     {
-                        this.registryContentsPreInstall[fullPath] = null;
+                        RetainedSettings.RegistryInventory[fullPath] = null;
                     }
 
                     if (recursive)
@@ -200,7 +165,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -212,97 +177,17 @@ namespace WinChangeMonitor
 
                 foreach (ServiceController service in services)
                 {
-                    ControlSetText(this.lStatus, service.ServiceName);
+                    Utilities.ControlSetText(this.lStatus, service.ServiceName);
 
-                    if (!this.servicesPreInstall.ContainsKey(service.ServiceName))
+                    if (!RetainedSettings.ServicesInventory.ContainsKey(service.ServiceName))
                     {
-                        this.servicesPreInstall[service.ServiceName] = new ServiceInfo(service);
+                        RetainedSettings.ServicesInventory[service.ServiceName] = new ServiceInfo(service);
                     }
                 }
             }
             catch(Exception ex)
             {
-                HandleException(ex);
-            }
-        }
-
-        delegate void TextBoxClearDelegate(TextBox textBox);
-        private void TextBoxClear(TextBox textBox)
-        {
-            try
-            {
-                if (textBox.InvokeRequired)
-                {
-                    textBox.Invoke(new TextBoxClearDelegate(TextBoxClear), new Object[] { textBox });
-                }
-                else
-                {
-                    textBox.Clear();
-                }
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex);
-            }
-        }
-
-        delegate void ControlSetTextDelegate(Control control, String text);
-        private void ControlSetText(Control control, String text)
-        {
-            try
-            {
-                if (control.InvokeRequired)
-                {
-                    control.Invoke(new ControlSetTextDelegate(ControlSetText), new Object[] { control, text });
-                }
-                else
-                {
-                    control.Text = text;
-                }
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex);
-            }
-        }
-
-        delegate void TextBoxAppendTextDelegate(TextBox textBox, String text);
-        private void TextBoxAppendText(TextBox textBox, String text)
-        {
-            try
-            {
-                if (textBox.InvokeRequired)
-                {
-                    textBox.Invoke(new TextBoxAppendTextDelegate(TextBoxAppendText), new Object[] { textBox, text });
-                }
-                else
-                {
-                    textBox.AppendText(text);
-                }
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex);
-            }
-        }
-
-        delegate void CheckBoxSetCheckedDelegate(CheckBox checkBox, Boolean value);
-        private void CheckBoxSetChecked(CheckBox checkBox, Boolean value)
-        {
-            try
-            {
-                if (checkBox.InvokeRequired)
-                {
-                    checkBox.Invoke(new CheckBoxSetCheckedDelegate(CheckBoxSetChecked), new object[] { checkBox, value });
-                }
-                else
-                {
-                    checkBox.Checked = value;
-                }
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -344,7 +229,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
                 return null;
             }
         }
@@ -353,92 +238,90 @@ namespace WinChangeMonitor
         {
             try
             {
-                if (this.cbFileSystemMonitor.Checked && this.dtFoldersToTrack.Rows.Count == 0)
+                if (this.cbFileSystemMonitor.Checked && RetainedSettings.FoldersToTrack.Count == 0)
                 {
-                    CheckBoxSetChecked(this.cbFileSystemMonitor, false);
+                    Utilities.CheckBoxSetChecked(this.cbFileSystemMonitor, false);
                 }
 
-                if (this.cbRegistryMonitor.Checked && this.dtKeysToTrack.Rows.Count == 0)
+                if (this.cbRegistryMonitor.Checked && RetainedSettings.KeysToTrack.Count == 0)
                 {
-                    CheckBoxSetChecked(this.cbRegistryMonitor, false);
+                    Utilities.CheckBoxSetChecked(this.cbRegistryMonitor, false);
                 }
 
-                TextBoxClear(this.tbOutput);
+                Utilities.TextBoxClear(this.tbOutput);
 
                 if (this.cbFileSystemMonitor.Checked)
                 {   
                     this.preInstallFoldersStarted = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Pre-Install File/Folder Inventory Started @ {this.preInstallFoldersStarted}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Pre-Install File/Folder Inventory Started @ {this.preInstallFoldersStarted}{Environment.NewLine}");
 
-                    foreach (DataRow row in this.dtFoldersToTrack.Rows)
+                    foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in RetainedSettings.FoldersToTrack)
                     {
-                        Boolean recursive = false;
-
-                        Boolean.TryParse(row["IncludeSubDirectories"].ToString(), out recursive);
-
-                        PreInstallInventoryDirectory(row["Folder"].ToString(), recursive);
+                        PreInstallInventoryDirectory(folder.Folder, folder.IncludeSubDirectories);
                     }
 
-                    this.preInstallFoldersFinished = DateTime.Now;
+                    RetainedSettings.PreInstallFileSystemFinished = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Pre-Install File/Folder Inventory Finished @ {this.preInstallFoldersFinished}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Pre-Install File/Folder Inventory Finished @ {RetainedSettings.PreInstallFileSystemFinished}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"Time Elapsed: {this.preInstallFoldersFinished - this.preInstallFoldersStarted}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Time Elapsed: {RetainedSettings.PreInstallFileSystemFinished - this.preInstallFoldersStarted}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"Inventoried {this.folderContentsPreInstall.Keys.Count.ToString("N0")} items{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Inventoried {RetainedSettings.FileSystemInventory.Keys.Count.ToString("N0")} items{Environment.NewLine}");
+
+                    RetainedSettings.SaveFileSystemSettings();
                 }
 
                 if (this.cbRegistryMonitor.Checked)
                 {
                     this.preInstallRegistryStarted = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Pre-Install Registry Inventory Started @ {this.preInstallRegistryStarted}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Pre-Install Registry Inventory Started @ {this.preInstallRegistryStarted}{Environment.NewLine}");
 
                     RegistryKey key;
 
-                    foreach (DataRow row in this.dtKeysToTrack.Rows)
+                    foreach (RetainedSettings.RegistrySettings.TrackedKey registryKey in RetainedSettings.KeysToTrack)
                     {
-                        key = OpenRegistryKey(row["Key"].ToString());
+                        key = OpenRegistryKey(registryKey.Key);
 
-                        Boolean recursive = false;
-
-                        Boolean.TryParse(row["IncludeSubKeys"].ToString(), out recursive);
-
-                        PreInstallInventoryRegistry(key, recursive);
+                        PreInstallInventoryRegistry(key, registryKey.IncludeSubKeys);
                     }
 
-                    this.preInstallRegistryFinished = DateTime.Now;
+                    RetainedSettings.PreInstallRegistryFinished = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Pre-Install Registry Inventory Finished @ {this.preInstallRegistryFinished}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Pre-Install Registry Inventory Finished @ {RetainedSettings.PreInstallRegistryFinished}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"Time Elapsed: {this.preInstallRegistryFinished - this.preInstallRegistryStarted}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Time Elapsed: {RetainedSettings.PreInstallRegistryFinished - this.preInstallRegistryStarted}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"Inventoried {this.registryContentsPreInstall.Keys.Count.ToString("N0")} items{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Inventoried {RetainedSettings.RegistryInventory.Keys.Count.ToString("N0")} items{Environment.NewLine}");
+
+                    RetainedSettings.SaveRegistrySettings();
                 }
 
                 if (this.cbServicesMonitor.Checked)
                 {
                     this.preInstallServicesStarted = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Pre-Install Services Inventory Started @ {this.preInstallServicesStarted}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Pre-Install Services Inventory Started @ {this.preInstallServicesStarted}{Environment.NewLine}");
 
                     PreInstallInventoryServices();
 
-                    this.preInstallServicesFinished = DateTime.Now;
+                    RetainedSettings.PreInstallServicesFinished = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Pre-Install Services Inventory Finished @ {this.preInstallServicesFinished}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Pre-Install Services Inventory Finished @ {RetainedSettings.PreInstallServicesFinished}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"Time Elapsed: {this.preInstallServicesFinished - this.preInstallServicesStarted}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Time Elapsed: {RetainedSettings.PreInstallServicesFinished - this.preInstallServicesStarted}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"Inventoried {this.servicesPreInstall.Keys.Count.ToString("N0")} items{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Inventoried {RetainedSettings.ServicesInventory.Keys.Count.ToString("N0")} items{Environment.NewLine}");
+
+                    RetainedSettings.SaveServicesSettings();
                 }
 
-                ControlSetText(this.lStatus, "");;
+                Utilities.ControlSetText(this.lStatus, "");;
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -452,7 +335,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -471,7 +354,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -485,7 +368,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -499,7 +382,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -511,7 +394,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -523,19 +406,19 @@ namespace WinChangeMonitor
 
                 if (result == DialogResult.Yes)
                 {
-                    this.dtFoldersToTrack.Rows.RemoveAt(this.dgvFoldersToTrack.CurrentRow.Index);
+                    RetainedSettings.FoldersToTrack.RemoveAt(this.dgvFoldersToTrack.CurrentRow.Index);
 
-                    if (this.dtFoldersToTrack.Rows.Count == 0)
+                    if (RetainedSettings.FoldersToTrack.Count == 0)
                     {
                         this.bRemoveFolder.Enabled = false;
 
-                        this.bPreInstall.Enabled = (this.cbRegistryMonitor.Checked && this.dtKeysToTrack.Rows.Count > 0) || this.cbServicesMonitor.Checked;
+                        this.bPreInstall.Enabled = (this.cbRegistryMonitor.Checked && RetainedSettings.KeysToTrack.Count > 0) || this.cbServicesMonitor.Checked;
                     }
                 }
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -547,19 +430,19 @@ namespace WinChangeMonitor
 
                 if (result == DialogResult.Yes)
                 {
-                    this.dtKeysToTrack.Rows.RemoveAt(this.dgvKeysToTrack.CurrentRow.Index);
+                    RetainedSettings.KeysToTrack.RemoveAt(this.dgvKeysToTrack.CurrentRow.Index);
 
-                    if (this.dtKeysToTrack.Rows.Count == 0)
+                    if (RetainedSettings.KeysToTrack.Count == 0)
                     {
                         this.bRemoveKey.Enabled = false;
 
-                        this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked && this.dtFoldersToTrack.Rows.Count > 0) || this.cbServicesMonitor.Checked;
+                        this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked && RetainedSettings.FoldersToTrack.Count > 0) || this.cbServicesMonitor.Checked;
                     }
                 }
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -571,9 +454,9 @@ namespace WinChangeMonitor
 
                 if (result == DialogResult.Yes)
                 {
-                    this.folderContentsPreInstall = new SortedDictionary<String, Boolean>();
-                    this.registryContentsPreInstall = new SortedDictionary<String, RegistryEntryInfo>();
-                    this.servicesPreInstall = new SortedDictionary<String, ServiceInfo>();
+                    RetainedSettings.DeleteFileSystemSettings();
+                    RetainedSettings.DeleteRegistrySettings();
+                    RetainedSettings.DeleteServicesSettings();
 
                     this.cbFileSystemMonitor.Enabled = this.dgvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
                     this.cbRegistryMonitor.Enabled = this.dgvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
@@ -587,7 +470,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -599,7 +482,7 @@ namespace WinChangeMonitor
 
                 if (result == DialogResult.OK)
                 {
-                    this.dtFoldersToTrack.Rows.Add(this.fbdAddFolder.SelectedPath, false);
+                    RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder(this.fbdAddFolder.SelectedPath, false));
 
                     this.dgvFoldersToTrack.ClearSelection();
                     this.dgvFoldersToTrack.CurrentCell = this.dgvFoldersToTrack.Rows[this.dgvFoldersToTrack.Rows.Count - 1].Cells[1];
@@ -608,7 +491,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -620,7 +503,8 @@ namespace WinChangeMonitor
 
                 if (result == DialogResult.OK)
                 {
-                    this.dtKeysToTrack.Rows.Add(this.rkbdAddKey.SelectedKeyPath, false);
+                    
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(this.rkbdAddKey.SelectedKeyPath, false));
 
                     this.dgvKeysToTrack.ClearSelection();
                     this.dgvKeysToTrack.CurrentCell = this.dgvKeysToTrack.Rows[this.dgvKeysToTrack.Rows.Count - 1].Cells[1];
@@ -629,7 +513,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -637,7 +521,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                ControlSetText(this.lStatus, directory);
+                Utilities.ControlSetText(this.lStatus, directory);
 
                 try
                 {
@@ -645,25 +529,25 @@ namespace WinChangeMonitor
 
                     foreach (String file in files)
                     {
-                        if (!this.folderContentsPreInstall.ContainsKey(file))
+                        if (!RetainedSettings.FileSystemInventory.ContainsKey(file))
                         {
                             this.folderContentsAdded[file] = false;
                         }
-                        else if (this.folderContentsPreInstall[file] == true) // file was a folder before and it's a file now
+                        else if (RetainedSettings.FileSystemInventory[file] == true) // file was a folder before and it's a file now
                         {
                             //this.folderContentsRemoved[file] = true; // the original folder was deleted
                             this.folderContentsAdded[file] = false; // the new file was added
                         }
                         else // both preinstall and postinstall inventories contain the file, check to see if it was modified
                         {
-                            if (File.GetLastWriteTime(file) > this.preInstallFoldersFinished)
+                            if (File.GetLastWriteTime(file) > RetainedSettings.PreInstallFileSystemFinished)
                             {
                                 this.folderContentsModified[file] = false;
                             }
 
-                            if (!this.folderContentsPreInstall.Remove(file)) // remove file from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
+                            if (!RetainedSettings.FileSystemInventory.Remove(file)) // remove file from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
                             {
-                                TextBoxAppendText(this.tbOutput, $"ERROR: folderContentsPreInstall.Remove(file [\"{file}\"]) FAILED{Environment.NewLine}");
+                                Utilities.TextBoxAppendText(this.tbOutput, $"ERROR: FileSystemInventory.Remove(file [\"{file}\"]) FAILED{Environment.NewLine}");
                             }
                         }
                     }
@@ -672,25 +556,25 @@ namespace WinChangeMonitor
 
                     foreach (String subDirectory in subDirectories)
                     {
-                        if (!this.folderContentsPreInstall.ContainsKey(subDirectory))
+                        if (!RetainedSettings.FileSystemInventory.ContainsKey(subDirectory))
                         {
                             this.folderContentsAdded[subDirectory] = true;
                         }
-                        else if (this.folderContentsPreInstall[subDirectory] == false) // subDirectory was a file before and it's a directory now
+                        else if (RetainedSettings.FileSystemInventory[subDirectory] == false) // subDirectory was a file before and it's a directory now
                         {
                             //this.folderContentsRemoved[subDirectory] = false; // the original file was deleted
                             this.folderContentsAdded[subDirectory] = true; // the new directory was added
                         }
                         else // both preinstall and postinstall inventories contain the directory, check to see if it was modified
                         {
-                            if (Directory.GetLastWriteTime(subDirectory) > this.preInstallFoldersFinished)
+                            if (Directory.GetLastWriteTime(subDirectory) > RetainedSettings.PreInstallFileSystemFinished)
                             {
                                 this.folderContentsModified[subDirectory] = true;
                             }
 
-                            if (!this.folderContentsPreInstall.Remove(subDirectory)) // remove directory from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
+                            if (!RetainedSettings.FileSystemInventory.Remove(subDirectory)) // remove directory from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
                             {
-                                TextBoxAppendText(this.tbOutput, $"ERROR: folderContentsPreInstall.Remove(subDirectory [\"{subDirectory}\"]) FAILED{Environment.NewLine}");
+                                Utilities.TextBoxAppendText(this.tbOutput, $"ERROR: FileSystemInventory.Remove(subDirectory [\"{subDirectory}\"]) FAILED{Environment.NewLine}");
                             }
                         }
 
@@ -704,7 +588,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -712,7 +596,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                ControlSetText(this.lStatus, key.ToString());
+                Utilities.ControlSetText(this.lStatus, key.ToString());
 
                 String[] valueNames = key.GetValueNames();
 
@@ -722,28 +606,27 @@ namespace WinChangeMonitor
                 {
                     fullPath = $@"{key.Name}\{valueName}";
 
-                    if (!this.registryContentsPreInstall.ContainsKey(fullPath))
+                    if (!RetainedSettings.RegistryInventory.ContainsKey(fullPath))
                     {
                         this.registryContentsAdded[fullPath] = new RegistryEntryInfo(key.GetValueKind(valueName), key.GetValue(valueName)?.ToString());
                     }
-                    else if (this.registryContentsPreInstall[fullPath] == null) // value was a key before and it's a value now
+                    else if (RetainedSettings.RegistryInventory[fullPath] == null) // value was a key before and it's a value now
                     {
                         //this.registryContentsRemoved[fullPath] = null;
                         this.registryContentsAdded[fullPath] = new RegistryEntryInfo(key.GetValueKind(valueName), key.GetValue(valueName)?.ToString());
                     }
                     else // both preinstall and postinstall inventories contain the value, check to see if it was modified
                     {
-                        if ((key.GetValueKind(valueName) != this.registryContentsPreInstall[fullPath].Kind) || (key.GetValue(valueName)?.ToString() != this.registryContentsPreInstall[fullPath].Value))
+                        if ((key.GetValueKind(valueName) != RetainedSettings.RegistryInventory[fullPath].Kind) || (key.GetValue(valueName)?.ToString() != RetainedSettings.RegistryInventory[fullPath].Value))
                         {
-                            this.registryContentsModified[fullPath] = new RegistryEntryDiff(this.registryContentsPreInstall[fullPath],
-                                                                                             new RegistryEntryInfo(key.GetValueKind(valueName), key.GetValue(valueName)?.ToString()));
+                            this.registryContentsModified[fullPath] = new RegistryEntryDiff(RetainedSettings.RegistryInventory[fullPath],
+                                                                                            new RegistryEntryInfo(key.GetValueKind(valueName), key.GetValue(valueName)?.ToString()));
                         }
 
-                        if (!this.registryContentsPreInstall.Remove(fullPath)) // remove value from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
+                        if (!RetainedSettings.RegistryInventory.Remove(fullPath)) // remove value from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
                         {
-                            TextBoxAppendText(this.tbOutput, $"ERROR: registryContentsPreInstall.Remove(valueName [\"{fullPath}\"]) FAILED{Environment.NewLine}");
+                            Utilities.TextBoxAppendText(this.tbOutput, $"ERROR: RegistryInventory.Remove(valueName [\"{fullPath}\"]) FAILED{Environment.NewLine}");
                         }
-
                     }
                 }
 
@@ -753,20 +636,20 @@ namespace WinChangeMonitor
                 {
                     fullPath = $@"{key.Name}\{subkeyName}";
 
-                    if (!this.registryContentsPreInstall.ContainsKey(fullPath))
+                    if (!RetainedSettings.RegistryInventory.ContainsKey(fullPath))
                     {
                         this.registryContentsAdded[fullPath] = null;
                     }
-                    else if (this.registryContentsPreInstall[fullPath] != null) // subkey was a value before and it's a key now
+                    else if (RetainedSettings.RegistryInventory[fullPath] != null) // subkey was a value before and it's a key now
                     {
                         //this.registryContentsRemoved[fullPath] = this.registryContentsPreInstall[fullPath];
                         this.registryContentsAdded[fullPath] = null;
                     }
                     else // both preinstall and postinstall inventories contain the subkey
                     {
-                        if (!this.registryContentsPreInstall.Remove(fullPath))
+                        if (!RetainedSettings.RegistryInventory.Remove(fullPath))
                         {
-                            TextBoxAppendText(this.tbOutput, $"ERROR: registryContentsPreInstall.Remove(subkeyName [\"{fullPath}\"]) FAILED{Environment.NewLine}");
+                            Utilities.TextBoxAppendText(this.tbOutput, $"ERROR: RegistryInventory.Remove(subkeyName [\"{fullPath}\"]) FAILED{Environment.NewLine}");
                         }
                     }
 
@@ -782,7 +665,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -794,23 +677,23 @@ namespace WinChangeMonitor
 
                 foreach (ServiceController service in services)
                 {
-                    ControlSetText(this.lStatus, service.ServiceName);
+                    Utilities.ControlSetText(this.lStatus, service.ServiceName);
 
-                    if (!this.servicesPreInstall.ContainsKey(service.ServiceName))
+                    if (!RetainedSettings.ServicesInventory.ContainsKey(service.ServiceName))
                     {
                         this.servicesAdded[service.ServiceName] = new ServiceInfo(service);
                     }
                     else // both preinstall and postinstall inventories contain the service, check to see if it was modified
                     {
-                        if ((service.CanPauseAndContinue != this.servicesPreInstall[service.ServiceName].CanPauseAndContinue) ||
-                            (service.CanShutdown != this.servicesPreInstall[service.ServiceName].CanShutdown) ||
-                            (service.CanStop != this.servicesPreInstall[service.ServiceName].CanStop) ||
-                            (service.DisplayName != this.servicesPreInstall[service.ServiceName].DisplayName) ||
-                            (service.ServiceType != this.servicesPreInstall[service.ServiceName].ServiceType) ||
-                            (service.StartType != this.servicesPreInstall[service.ServiceName].StartType) ||
-                            (service.ServicesDependedOn.Length != this.servicesPreInstall[service.ServiceName].ServiceNamesDependedOn.Count))
+                        if ((service.CanPauseAndContinue != RetainedSettings.ServicesInventory[service.ServiceName].CanPauseAndContinue) ||
+                            (service.CanShutdown != RetainedSettings.ServicesInventory[service.ServiceName].CanShutdown) ||
+                            (service.CanStop != RetainedSettings.ServicesInventory[service.ServiceName].CanStop) ||
+                            (service.DisplayName != RetainedSettings.ServicesInventory[service.ServiceName].DisplayName) ||
+                            (service.ServiceType != RetainedSettings.ServicesInventory[service.ServiceName].ServiceType) ||
+                            (service.StartType != RetainedSettings.ServicesInventory[service.ServiceName].StartType) ||
+                            (service.ServicesDependedOn.Length != RetainedSettings.ServicesInventory[service.ServiceName].ServiceNamesDependedOn.Count))
                         {
-                            this.servicesModified[service.ServiceName] = new ServiceDiff(this.servicesPreInstall[service.ServiceName],
+                            this.servicesModified[service.ServiceName] = new ServiceDiff(RetainedSettings.ServicesInventory[service.ServiceName],
                                                                                          new ServiceInfo(service));
                         }
                         else // everything else matches, now check to see if any of the services depended on changed
@@ -819,7 +702,7 @@ namespace WinChangeMonitor
 
                             for (Int32 i = 0; !changed && (i < service.ServicesDependedOn.Length); ++i)
                             {
-                                if (service.ServicesDependedOn[i].ServiceName != this.servicesPreInstall[service.ServiceName].ServiceNamesDependedOn[i])
+                                if (service.ServicesDependedOn[i].ServiceName != RetainedSettings.ServicesInventory[service.ServiceName].ServiceNamesDependedOn[i])
                                 {
                                     changed = true;
                                 }
@@ -827,21 +710,21 @@ namespace WinChangeMonitor
 
                             if (changed)
                             {
-                                this.servicesModified[service.ServiceName] = new ServiceDiff(this.servicesPreInstall[service.ServiceName],
+                                this.servicesModified[service.ServiceName] = new ServiceDiff(RetainedSettings.ServicesInventory[service.ServiceName],
                                                                                              new ServiceInfo(service));
                             }
                         }
 
-                        if (!this.servicesPreInstall.Remove(service.ServiceName)) // remove service from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
+                        if (!RetainedSettings.ServicesInventory.Remove(service.ServiceName)) // remove service from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
                         {
-                            TextBoxAppendText(this.tbOutput, $"ERROR: servicesPreInstall.Remove(\"{service.ServiceName}\") FAILED{Environment.NewLine}");
+                            Utilities.TextBoxAppendText(this.tbOutput, $"ERROR: ServicesInventory.Remove(\"{service.ServiceName}\") FAILED{Environment.NewLine}");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -859,79 +742,72 @@ namespace WinChangeMonitor
                 {
                     this.postInstallFoldersStarted = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Post-Install File/Folder Inventory Started @ {this.postInstallFoldersStarted}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Post-Install File/Folder Inventory Started @ {this.postInstallFoldersStarted}{Environment.NewLine}");
 
-                    foreach (DataRow row in this.dtFoldersToTrack.Rows)
+                    foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in RetainedSettings.FoldersToTrack)
                     {
-                        Boolean recursive = false;
-
-                        Boolean.TryParse(row["IncludeSubDirectories"].ToString(), out recursive);
-
-                        PostInstallInventoryDirectory(row["Folder"].ToString(), recursive);
+                        PostInstallInventoryDirectory(folder.Folder, folder.IncludeSubDirectories);
                     }
 
                     this.postInstallFoldersFinished = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Post-Install File/Folder Inventory Finished @ {this.postInstallFoldersFinished}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Post-Install File/Folder Inventory Finished @ {this.postInstallFoldersFinished}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"Time Elapsed: {this.postInstallFoldersFinished - this.postInstallFoldersStarted}{Environment.NewLine}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Time Elapsed: {this.postInstallFoldersFinished - this.postInstallFoldersStarted}{Environment.NewLine}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"{this.folderContentsAdded.Keys.Count.ToString("N0")} items were added{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"{this.folderContentsAdded.Keys.Count.ToString("N0")} items were added{Environment.NewLine}");
 
                     count = 0;
 
                     foreach (String key in this.folderContentsAdded.Keys)
                     {
-                        TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = {this.folderContentsAdded[key]}{Environment.NewLine}");
+                        Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = {this.folderContentsAdded[key]}{Environment.NewLine}");
                     }
 
-                    TextBoxAppendText(this.tbOutput, $"{this.folderContentsModified.Keys.Count.ToString("N0")} items were modified{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"{this.folderContentsModified.Keys.Count.ToString("N0")} items were modified{Environment.NewLine}");
 
                     count = 0;
 
                     foreach (String key in this.folderContentsModified.Keys)
                     {
-                        TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = {this.folderContentsModified[key]}{Environment.NewLine}");
+                        Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = {this.folderContentsModified[key]}{Environment.NewLine}");
                     }
 
-                    TextBoxAppendText(this.tbOutput, $"{this.folderContentsPreInstall.Keys.Count.ToString("N0")} items were removed{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"{RetainedSettings.FileSystemInventory.Keys.Count.ToString("N0")} items were removed{Environment.NewLine}");
 
                     count = 0;
 
-                    foreach (String key in this.folderContentsPreInstall.Keys)
+                    foreach (String key in RetainedSettings.FileSystemInventory.Keys)
                     {
-                        TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = {this.folderContentsPreInstall[key]}{Environment.NewLine}");
+                        Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = {RetainedSettings.FileSystemInventory[key]}{Environment.NewLine}");
                     }
 
-                    TextBoxAppendText(this.tbOutput, Environment.NewLine);
+                    Utilities.TextBoxAppendText(this.tbOutput, Environment.NewLine);
                 }
 
                 if (this.cbRegistryMonitor.Checked)
                 {
                     this.postInstallRegistryStarted = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Post-Install Registry Inventory Started @ {this.postInstallRegistryStarted}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Post-Install Registry Inventory Started @ {this.postInstallRegistryStarted}{Environment.NewLine}");
 
                     RegistryKey key;
 
-                    foreach (DataRow row in this.dtKeysToTrack.Rows)
+                    foreach (RetainedSettings.RegistrySettings.TrackedKey regKey in RetainedSettings.KeysToTrack)
                     {
-                        key = OpenRegistryKey(row["Key"].ToString());
 
-                        Boolean recursive = false;
+                        key = OpenRegistryKey(regKey.Key);
 
-                        Boolean.TryParse(row["IncludeSubKeys"].ToString(), out recursive);
-
-                        PostInstallInventoryRegistry(key, recursive);
+                        PostInstallInventoryRegistry(key, regKey.IncludeSubKeys);
                     }
 
                     this.postInstallRegistryFinished = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Post-Install Registry Inventory Finished @ {this.postInstallRegistryFinished}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Post-Install Registry Inventory Finished @ {this.postInstallRegistryFinished}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"Time Elapsed: {this.postInstallRegistryFinished - this.postInstallRegistryStarted}{Environment.NewLine}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Time Elapsed: {this.postInstallRegistryFinished - this.postInstallRegistryStarted}{Environment.NewLine}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"{this.registryContentsAdded.Keys.Count.ToString("N0")} items were added{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"{this.registryContentsAdded.Keys.Count.ToString("N0")} items were added{Environment.NewLine}");
 
                     count = 0;
 
@@ -939,87 +815,87 @@ namespace WinChangeMonitor
                     {
                         if (this.registryContentsAdded[entry] == null)
                         {
-                            TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {entry} = null{Environment.NewLine}");
+                            Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {entry} = null{Environment.NewLine}");
                         }
                         else
                         {
-                            TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {entry} = ({this.registryContentsAdded[entry]}{Environment.NewLine}");
+                            Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {entry} = ({this.registryContentsAdded[entry]}{Environment.NewLine}");
                         }
                     }
 
-                    TextBoxAppendText(this.tbOutput, $"{this.registryContentsModified.Keys.Count.ToString("N0")} items were modified{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"{this.registryContentsModified.Keys.Count.ToString("N0")} items were modified{Environment.NewLine}");
 
                     count = 0;
 
                     foreach (String entry in this.registryContentsModified.Keys)
                     {
-                        TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {entry} = {this.registryContentsModified[entry]}{Environment.NewLine}");
+                        Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {entry} = {this.registryContentsModified[entry]}{Environment.NewLine}");
                     }
 
-                    TextBoxAppendText(this.tbOutput, $"{this.registryContentsPreInstall.Keys.Count.ToString("N0")} items were removed{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"{RetainedSettings.RegistryInventory.Keys.Count.ToString("N0")} items were removed{Environment.NewLine}");
 
                     count = 0;
 
-                    foreach (String entry in this.registryContentsPreInstall.Keys)
+                    foreach (String entry in RetainedSettings.RegistryInventory.Keys)
                     {
-                        if (this.registryContentsPreInstall[entry] == null)
+                        if (RetainedSettings.RegistryInventory[entry] == null)
                         {
-                            TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {entry} = null{Environment.NewLine}");
+                            Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {entry} = null{Environment.NewLine}");
                         }
                         else
                         {
-                            TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {entry} = ({this.registryContentsPreInstall[entry]}){Environment.NewLine}");
+                            Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {entry} = ({RetainedSettings.RegistryInventory[entry]}){Environment.NewLine}");
                         }
                     }
 
-                    TextBoxAppendText(this.tbOutput, Environment.NewLine);
+                    Utilities.TextBoxAppendText(this.tbOutput, Environment.NewLine);
                 }
 
                 if (this.cbServicesMonitor.Checked)
                 {
                     this.postInstallServicesStarted = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Post-Install Services Inventory Started @ {this.postInstallServicesStarted}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Post-Install Services Inventory Started @ {this.postInstallServicesStarted}{Environment.NewLine}");
 
                     PostInstallInventoryServices();
 
                     this.postInstallServicesFinished = DateTime.Now;
 
-                    TextBoxAppendText(this.tbOutput, $"Post-Install Services Inventory Finished @ {this.postInstallServicesFinished}{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"Post-Install Services Inventory Finished @ {this.postInstallServicesFinished}{Environment.NewLine}");
 
-                    TextBoxAppendText(this.tbOutput, $"{this.servicesAdded.Keys.Count.ToString("N0")} items were added{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"{this.servicesAdded.Keys.Count.ToString("N0")} items were added{Environment.NewLine}");
 
                     count = 0;
 
                     foreach (String key in this.servicesAdded.Keys)
                     {
-                        TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = ({this.servicesAdded[key]}){Environment.NewLine}");
+                        Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = ({this.servicesAdded[key]}){Environment.NewLine}");
                     }
 
-                    TextBoxAppendText(this.tbOutput, $"{this.servicesModified.Keys.Count.ToString("N0")} items were modified{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"{this.servicesModified.Keys.Count.ToString("N0")} items were modified{Environment.NewLine}");
 
                     count = 0;
 
                     foreach (String key in this.servicesModified.Keys)
                     {
-                        TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = {this.servicesModified[key]}{Environment.NewLine}");
+                        Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = {this.servicesModified[key]}{Environment.NewLine}");
                     }
 
-                    TextBoxAppendText(this.tbOutput, $"{this.servicesPreInstall.Keys.Count.ToString("N0")} items were removed{Environment.NewLine}");
+                    Utilities.TextBoxAppendText(this.tbOutput, $"{RetainedSettings.ServicesInventory.Keys.Count.ToString("N0")} items were removed{Environment.NewLine}");
 
                     count = 0;
 
-                    foreach (String key in this.servicesPreInstall.Keys)
+                    foreach (String key in RetainedSettings.ServicesInventory.Keys)
                     {
-                        TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = ({this.servicesPreInstall[key]}");
+                        Utilities.TextBoxAppendText(this.tbOutput, $"{(++count).ToString().PadLeft(TotalPaddedSize)}. {key} = ({RetainedSettings.ServicesInventory[key]}");
                     }
                 }
 
-                ControlSetText(this.lStatus, "");
+                Utilities.ControlSetText(this.lStatus, "");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
             }
         }
 
@@ -1027,6 +903,10 @@ namespace WinChangeMonitor
         {
             try
             {
+                RetainedSettings.DeleteFileSystemSettings();
+                RetainedSettings.DeleteRegistrySettings();
+                RetainedSettings.DeleteServicesSettings();
+
                 this.cbFileSystemMonitor.Enabled = this.dgvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
                 this.cbRegistryMonitor.Enabled = this.dgvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
                 this.cbServicesMonitor.Enabled = true;
@@ -1034,7 +914,83 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void bwLoader_DoWork(Object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                RetainedSettings.Initialize(SplashScreen);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void bwLoader_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            try
+            {
+                SplashScreen.Close();
+
+                this.lStatus.Text = "";
+
+                if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
+                {
+                    RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder(@"C:\", false));
+
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(HKCR, false));
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(HKCU, false));
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(HKLM, false));
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(HKU, false));
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(HKCC, false));
+
+                    this.cbFileSystemMonitor.Checked = true;
+                    this.dgvFoldersToTrack.Visible = this.bAddFolder.Visible = this.bRemoveFolder.Visible = true;
+                    this.cbRegistryMonitor.Checked = true;
+                    this.dgvKeysToTrack.Visible = this.bAddKey.Visible = this.bRemoveKey.Visible = true;
+                    this.cbServicesMonitor.Checked = true;
+
+                    this.bPreInstall.Enabled = true;
+                }
+                else // a previous inventory exists
+                {
+                    if (RetainedSettings.PreInstallFileSystemFinished != null)
+                    {
+                        this.cbFileSystemMonitor.Checked = true;
+                        this.cbFileSystemMonitor.Enabled = false;
+                        this.dgvFoldersToTrack.Visible = this.bAddFolder.Visible = this.bRemoveFolder.Visible = true;
+                        this.dgvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
+                    }
+
+                    if (RetainedSettings.PreInstallRegistryFinished != null)
+                    {
+                        this.cbRegistryMonitor.Checked = true;
+                        this.cbRegistryMonitor.Enabled = false;
+                        this.dgvKeysToTrack.Visible = this.bAddKey.Visible = this.bRemoveKey.Visible = true;
+                        this.dgvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
+                    }
+
+                    if (RetainedSettings.PreInstallServicesFinished != null)
+                    {
+                        this.cbServicesMonitor.Checked = true;
+                        this.cbServicesMonitor.Enabled = false;
+                    }
+
+                    this.bPreInstall.Enabled = false;
+                    this.bPostInstall.Enabled = true;
+                    this.bStartFresh.Enabled = true;
+                }
+
+                this.dgvFoldersToTrack.DataSource = new BindingSource { DataSource = RetainedSettings.FoldersToTrack };
+                this.dgvKeysToTrack.DataSource = new BindingSource { DataSource = RetainedSettings.KeysToTrack };
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
             }
         }
     }

@@ -1,9 +1,10 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Text.Json.Serialization;
 
 namespace WinChangeMonitor
 {
-    internal class RegistryEntryInfo
+    public class RegistryEntryInfo : IJsonOnDeserializing
     {
         public RegistryValueKind Kind { get; private set; }
         public String Value { get; private set; }
@@ -11,13 +12,40 @@ namespace WinChangeMonitor
 
         public RegistryEntryInfo(RegistryValueKind kind, String value)
         {
-            this.Kind = kind;
-            this.Value = value;
+            try
+            {
+                this.Kind = kind;
+                this.Value = value;
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
         }
 
         public override String ToString()
         {
-            return $"{this.Kind}, {this.Value}";
+            try
+            {
+                return $"{this.Kind}, {this.Value}";
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+                return null;
+            }
+        }
+
+        public void OnDeserializing()
+        {
+            try
+            {
+                WinChangeMonitorForm.SplashScreen.IncrementStatus();
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
         }
     }
 
@@ -28,13 +56,28 @@ namespace WinChangeMonitor
 
         public RegistryEntryDiff(RegistryEntryInfo initial, RegistryEntryInfo current)
         {
-            this.Initial = initial;
-            this.Current = current;
+            try
+            {
+                this.Initial = initial;
+                this.Current = current;
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
         }
 
         public override String ToString()
         {
-            return $"({this.Initial}) -> ({this.Current})";
+            try
+            {
+                return $"({this.Initial}) -> ({this.Current})";
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+                return null;
+            }
         }
     }
 }
