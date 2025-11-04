@@ -1,4 +1,6 @@
-﻿namespace WinChangeMonitor
+﻿using System.Drawing.Text;
+
+namespace WinChangeMonitor
 {
     partial class SplashScreenForm
     {
@@ -28,8 +30,10 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.lTitle = new System.Windows.Forms.Label();
             this.lStatus = new System.Windows.Forms.Label();
+            this.tReportStatus = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // lTitle
@@ -56,6 +60,12 @@
             this.lStatus.Text = "Status Message";
             this.lStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
+            // tReportStatus
+            // 
+            this.tReportStatus.Enabled = true;
+            this.tReportStatus.Interval = 500;
+            this.tReportStatus.Tick += new System.EventHandler(this.tReportStatus_Tick);
+            // 
             // SplashScreenForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -70,7 +80,9 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "SplashScreenForm";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SplashScreenForm_FormClosing);
             this.Load += new System.EventHandler(this.SplashScreenForm_Load);
+            this.Move += new System.EventHandler(this.SplashScreenForm_Move);
             this.Resize += new System.EventHandler(this.SplashScreenForm_Resize);
             this.ResumeLayout(false);
 
@@ -80,5 +92,6 @@
 
         private System.Windows.Forms.Label lTitle;
         private System.Windows.Forms.Label lStatus;
+        private System.Windows.Forms.Timer tReportStatus;
     }
 }

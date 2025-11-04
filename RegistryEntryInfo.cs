@@ -1,27 +1,17 @@
-﻿using Microsoft.Win32;
+﻿using MessagePack;
+using Microsoft.Win32;
 using System;
-using System.Text.Json.Serialization;
 
 namespace WinChangeMonitor
 {
-    public class RegistryEntryInfo : IJsonOnDeserializing
+    [MessagePackObject]
+    public class RegistryEntryInfo : IMessagePackSerializationCallbackReceiver
     {
-        public RegistryValueKind Kind { get; private set; }
-        public String Value { get; private set; }
+        [Key(0)]
+        public RegistryValueKind Kind { get; set; }
 
-
-        public RegistryEntryInfo(RegistryValueKind kind, String value)
-        {
-            try
-            {
-                this.Kind = kind;
-                this.Value = value;
-            }
-            catch (Exception ex)
-            {
-                Utilities.HandleException(ex);
-            }
-        }
+        [Key(1)]
+        public String Value { get; set; }
 
         public override String ToString()
         {
@@ -36,16 +26,14 @@ namespace WinChangeMonitor
             }
         }
 
-        public void OnDeserializing()
+        public void OnBeforeSerialize()
         {
-            try
-            {
-                WinChangeMonitorForm.SplashScreen.IncrementStatus();
-            }
-            catch (Exception ex)
-            {
-                Utilities.HandleException(ex);
-            }
+            // not used, only present to satisfy IMessagePackSerializationCallbackReceiver interface member requirement
+        }
+
+        public void OnAfterDeserialize()
+        {
+            WinChangeMonitorForm.SplashScreen.IncrementStatus();
         }
     }
 

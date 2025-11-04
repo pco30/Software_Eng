@@ -45,8 +45,6 @@
             this.cbServicesMonitor = new System.Windows.Forms.CheckBox();
             this.ttHelp = new System.Windows.Forms.ToolTip(this.components);
             this.dgvFoldersToTrack = new System.Windows.Forms.DataGridView();
-            this.tbcolFolder = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.cbcolIncludeSubdirs = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.cbFileSystemMonitor = new System.Windows.Forms.CheckBox();
             this.bRemoveFolder = new System.Windows.Forms.Button();
             this.bAddFolder = new System.Windows.Forms.Button();
@@ -54,6 +52,9 @@
             this.bStartFresh = new System.Windows.Forms.Button();
             this.bwPostInstall = new System.ComponentModel.BackgroundWorker();
             this.bwLoader = new System.ComponentModel.BackgroundWorker();
+            this.tStatus = new System.Windows.Forms.Timer(this.components);
+            this.tbcolFolder = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.cbcolIncludeSubFolders = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.gbRegistryMonitor.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvKeysToTrack)).BeginInit();
             this.gbServicesMonitor.SuspendLayout();
@@ -229,7 +230,7 @@
             this.dgvFoldersToTrack.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvFoldersToTrack.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.tbcolFolder,
-            this.cbcolIncludeSubdirs});
+            this.cbcolIncludeSubFolders});
             this.dgvFoldersToTrack.Location = new System.Drawing.Point(77, 19);
             this.dgvFoldersToTrack.MultiSelect = false;
             this.dgvFoldersToTrack.Name = "dgvFoldersToTrack";
@@ -237,22 +238,6 @@
             this.dgvFoldersToTrack.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.dgvFoldersToTrack.Size = new System.Drawing.Size(684, 133);
             this.dgvFoldersToTrack.TabIndex = 4;
-            // 
-            // tbcolFolder
-            // 
-            this.tbcolFolder.DataPropertyName = "Folder";
-            this.tbcolFolder.HeaderText = "Folder";
-            this.tbcolFolder.Name = "tbcolFolder";
-            this.tbcolFolder.ReadOnly = true;
-            this.tbcolFolder.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            this.tbcolFolder.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            // 
-            // cbcolIncludeSubdirs
-            // 
-            this.cbcolIncludeSubdirs.DataPropertyName = "IncludeSubDirectories";
-            this.cbcolIncludeSubdirs.HeaderText = "Include Sub-Directories?";
-            this.cbcolIncludeSubdirs.Name = "cbcolIncludeSubdirs";
-            this.cbcolIncludeSubdirs.Resizable = System.Windows.Forms.DataGridViewTriState.False;
             // 
             // cbFileSystemMonitor
             // 
@@ -324,6 +309,27 @@
             this.bwLoader.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bwLoader_DoWork);
             this.bwLoader.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.bwLoader_RunWorkerCompleted);
             // 
+            // tStatus
+            // 
+            this.tStatus.Interval = 250;
+            this.tStatus.Tick += new System.EventHandler(this.tStatus_Tick);
+            // 
+            // tbcolFolder
+            // 
+            this.tbcolFolder.DataPropertyName = "Folder";
+            this.tbcolFolder.HeaderText = "Folder";
+            this.tbcolFolder.Name = "tbcolFolder";
+            this.tbcolFolder.ReadOnly = true;
+            this.tbcolFolder.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            this.tbcolFolder.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
+            // cbcolIncludeSubFolders
+            // 
+            this.cbcolIncludeSubFolders.DataPropertyName = "IncludeSubFolders";
+            this.cbcolIncludeSubFolders.HeaderText = "Include Sub-Folders?";
+            this.cbcolIncludeSubFolders.Name = "cbcolIncludeSubFolders";
+            this.cbcolIncludeSubFolders.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            // 
             // WinChangeMonitorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -341,6 +347,7 @@
             this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "WinChangeMonitor - BU MET CS 673/473 Group #3 - Fall 2025";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.WinChangeMonitorForm_FormClosing);
             this.Load += new System.EventHandler(this.WinChangeMonitorForm_Load);
             this.gbRegistryMonitor.ResumeLayout(false);
             this.gbRegistryMonitor.PerformLayout();
@@ -374,13 +381,14 @@
         private System.Windows.Forms.GroupBox gbFileSystemMonitor;
         private System.Windows.Forms.Button bAddKey;
         private System.Windows.Forms.Button bRemoveKey;
-        private System.Windows.Forms.DataGridViewTextBoxColumn tbcolFolder;
-        private System.Windows.Forms.DataGridViewCheckBoxColumn cbcolIncludeSubdirs;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
         private System.Windows.Forms.DataGridViewCheckBoxColumn dataGridViewCheckBoxColumn1;
         private System.Windows.Forms.Button bStartFresh;
         private System.ComponentModel.BackgroundWorker bwPostInstall;
         private System.ComponentModel.BackgroundWorker bwLoader;
+        private System.Windows.Forms.Timer tStatus;
+        private System.Windows.Forms.DataGridViewTextBoxColumn tbcolFolder;
+        private System.Windows.Forms.DataGridViewCheckBoxColumn cbcolIncludeSubFolders;
     }
 }
 

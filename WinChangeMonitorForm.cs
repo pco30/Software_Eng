@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Security;
 using System.ServiceProcess;
 using System.Windows.Forms;
@@ -28,8 +30,11 @@ namespace WinChangeMonitor
         private DateTime? postInstallRegistryFinished = null;
         private DateTime? postInstallServicesStarted = null;
         private DateTime? postInstallServicesFinished = null;
+        private String operation, current;
 
-        public static SplashScreenForm SplashScreen { get; private set; } = new SplashScreenForm();
+        public static SplashScreenForm SplashScreen { get; private set; }
+
+        public Boolean ConfirmOnClose { get; set; } = true;
 
         private static String HKCR = "HKEY_CLASSES_ROOT";
         private static String HKCU = "HKEY_CURRENT_USER";
@@ -49,16 +54,22 @@ namespace WinChangeMonitor
             }
         }
 
+        private DateTime loadStarted, loadFinished;
+
         private void WinChangeMonitorForm_Load(Object sender, EventArgs e)
         {
             try
             {
+                SplashScreen = new SplashScreenForm(this);
+
                 this.MinimumSize = this.Size;
 
                 this.fbdAddFolder.ShowNewFolderButton = false;
                 this.fbdAddFolder.RootFolder = Environment.SpecialFolder.MyComputer;
 
                 SplashScreen.Show(this);
+
+                this.loadStarted = DateTime.Now;
 
                 this.bwLoader.RunWorkerAsync();
             }
@@ -79,6 +90,9 @@ namespace WinChangeMonitor
                 this.cbServicesMonitor.Enabled = false;
                 this.bPostInstall.Enabled = this.bStartFresh.Enabled = false;
 
+                this.tStatus.Enabled = true;
+                this.tStatus.Start();
+
                 this.bwPreInstall.RunWorkerAsync();
             }
             catch (Exception ex)
@@ -91,7 +105,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                Utilities.ControlSetText(this.lStatus, directory);
+                this.current = directory;
 
                 try
                 {
@@ -99,14 +113,14 @@ namespace WinChangeMonitor
 
                     foreach (String file in files)
                     {
-                        RetainedSettings.FileSystemInventory[file] = false;
+                        RetainedSettings.FileSystemInventory[file] = new RetainedSettings.FileSystemSettings.FileSystemEntryInfo { IsFolder = false };
                     }
 
                     String[] subDirectories = Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly);
 
                     foreach (String subDirectory in subDirectories)
                     {
-                        RetainedSettings.FileSystemInventory[subDirectory] = true;
+                        RetainedSettings.FileSystemInventory[subDirectory] = new RetainedSettings.FileSystemSettings.FileSystemEntryInfo { IsFolder = true };
 
                         if (recursive)
                         {
@@ -126,7 +140,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                Utilities.ControlSetText(this.lStatus, key.ToString());
+                this.current = key.ToString();
 
                 String[] valueNames = key.GetValueNames();
 
@@ -138,7 +152,7 @@ namespace WinChangeMonitor
 
                     if (!RetainedSettings.RegistryInventory.ContainsKey(fullPath))
                     {
-                        RetainedSettings.RegistryInventory[fullPath] = new RegistryEntryInfo(key.GetValueKind(valueName), key.GetValue(valueName)?.ToString());
+                        RetainedSettings.RegistryInventory[fullPath] = new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = key.GetValue(valueName)?.ToString() };
                     }
                 }
 
@@ -177,11 +191,11 @@ namespace WinChangeMonitor
 
                 foreach (ServiceController service in services)
                 {
-                    Utilities.ControlSetText(this.lStatus, service.ServiceName);
+                    this.current = service.ServiceName;
 
                     if (!RetainedSettings.ServicesInventory.ContainsKey(service.ServiceName))
                     {
-                        RetainedSettings.ServicesInventory[service.ServiceName] = new ServiceInfo(service);
+                        RetainedSettings.ServicesInventory[service.ServiceName] = ServiceInfo.Parse(service);
                     }
                 }
             }
@@ -256,9 +270,11 @@ namespace WinChangeMonitor
 
                     Utilities.TextBoxAppendText(this.tbOutput, $"Pre-Install File/Folder Inventory Started @ {this.preInstallFoldersStarted}{Environment.NewLine}");
 
+                    this.operation = "Performing File System Inventory";
+
                     foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in RetainedSettings.FoldersToTrack)
                     {
-                        PreInstallInventoryDirectory(folder.Folder, folder.IncludeSubDirectories);
+                        PreInstallInventoryDirectory(folder.Folder, folder.IncludeSubFolders);
                     }
 
                     RetainedSettings.PreInstallFileSystemFinished = DateTime.Now;
@@ -279,6 +295,8 @@ namespace WinChangeMonitor
                     Utilities.TextBoxAppendText(this.tbOutput, $"Pre-Install Registry Inventory Started @ {this.preInstallRegistryStarted}{Environment.NewLine}");
 
                     RegistryKey key;
+
+                    this.operation = "Performing Registry Inventory";
 
                     foreach (RetainedSettings.RegistrySettings.TrackedKey registryKey in RetainedSettings.KeysToTrack)
                     {
@@ -304,6 +322,8 @@ namespace WinChangeMonitor
 
                     Utilities.TextBoxAppendText(this.tbOutput, $"Pre-Install Services Inventory Started @ {this.preInstallServicesStarted}{Environment.NewLine}");
 
+                    this.operation = "Performing Services Inventory";
+
                     PreInstallInventoryServices();
 
                     RetainedSettings.PreInstallServicesFinished = DateTime.Now;
@@ -317,6 +337,8 @@ namespace WinChangeMonitor
                     RetainedSettings.SaveServicesSettings();
                 }
 
+                RetainedSettings.SaveCommonInfo();
+
                 Utilities.ControlSetText(this.lStatus, "");;
             }
             catch (Exception ex)
@@ -329,6 +351,8 @@ namespace WinChangeMonitor
         {
             try
             {
+                this.tStatus.Stop();
+
                 this.bPostInstall.Enabled = this.bStartFresh.Enabled = true;
 
                 this.lStatus.Text = "Current Folder/Key/Service Displayed Here";
@@ -454,6 +478,7 @@ namespace WinChangeMonitor
 
                 if (result == DialogResult.Yes)
                 {
+                    RetainedSettings.DeleteCommonInfo();
                     RetainedSettings.DeleteFileSystemSettings();
                     RetainedSettings.DeleteRegistrySettings();
                     RetainedSettings.DeleteServicesSettings();
@@ -482,7 +507,7 @@ namespace WinChangeMonitor
 
                 if (result == DialogResult.OK)
                 {
-                    RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder(this.fbdAddFolder.SelectedPath, false));
+                    RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder { Folder = this.fbdAddFolder.SelectedPath, IncludeSubFolders = false });
 
                     this.dgvFoldersToTrack.ClearSelection();
                     this.dgvFoldersToTrack.CurrentCell = this.dgvFoldersToTrack.Rows[this.dgvFoldersToTrack.Rows.Count - 1].Cells[1];
@@ -504,7 +529,7 @@ namespace WinChangeMonitor
                 if (result == DialogResult.OK)
                 {
                     
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(this.rkbdAddKey.SelectedKeyPath, false));
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = this.rkbdAddKey.SelectedKeyPath, IncludeSubKeys = false });
 
                     this.dgvKeysToTrack.ClearSelection();
                     this.dgvKeysToTrack.CurrentCell = this.dgvKeysToTrack.Rows[this.dgvKeysToTrack.Rows.Count - 1].Cells[1];
@@ -521,7 +546,8 @@ namespace WinChangeMonitor
         {
             try
             {
-                Utilities.ControlSetText(this.lStatus, directory);
+                this.operation = "Performing File System Inventory";
+                this.current = directory;
 
                 try
                 {
@@ -533,7 +559,7 @@ namespace WinChangeMonitor
                         {
                             this.folderContentsAdded[file] = false;
                         }
-                        else if (RetainedSettings.FileSystemInventory[file] == true) // file was a folder before and it's a file now
+                        else if (RetainedSettings.FileSystemInventory[file].IsFolder == true) // file was a folder before and it's a file now
                         {
                             //this.folderContentsRemoved[file] = true; // the original folder was deleted
                             this.folderContentsAdded[file] = false; // the new file was added
@@ -560,7 +586,7 @@ namespace WinChangeMonitor
                         {
                             this.folderContentsAdded[subDirectory] = true;
                         }
-                        else if (RetainedSettings.FileSystemInventory[subDirectory] == false) // subDirectory was a file before and it's a directory now
+                        else if (RetainedSettings.FileSystemInventory[subDirectory].IsFolder == false) // subDirectory was a file before and it's a directory now
                         {
                             //this.folderContentsRemoved[subDirectory] = false; // the original file was deleted
                             this.folderContentsAdded[subDirectory] = true; // the new directory was added
@@ -608,19 +634,19 @@ namespace WinChangeMonitor
 
                     if (!RetainedSettings.RegistryInventory.ContainsKey(fullPath))
                     {
-                        this.registryContentsAdded[fullPath] = new RegistryEntryInfo(key.GetValueKind(valueName), key.GetValue(valueName)?.ToString());
+                        this.registryContentsAdded[fullPath] = new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = key.GetValue(valueName)?.ToString() };
                     }
                     else if (RetainedSettings.RegistryInventory[fullPath] == null) // value was a key before and it's a value now
                     {
                         //this.registryContentsRemoved[fullPath] = null;
-                        this.registryContentsAdded[fullPath] = new RegistryEntryInfo(key.GetValueKind(valueName), key.GetValue(valueName)?.ToString());
+                        this.registryContentsAdded[fullPath] = new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = key.GetValue(valueName)?.ToString() };
                     }
                     else // both preinstall and postinstall inventories contain the value, check to see if it was modified
                     {
                         if ((key.GetValueKind(valueName) != RetainedSettings.RegistryInventory[fullPath].Kind) || (key.GetValue(valueName)?.ToString() != RetainedSettings.RegistryInventory[fullPath].Value))
                         {
                             this.registryContentsModified[fullPath] = new RegistryEntryDiff(RetainedSettings.RegistryInventory[fullPath],
-                                                                                            new RegistryEntryInfo(key.GetValueKind(valueName), key.GetValue(valueName)?.ToString()));
+                                                                                            new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = key.GetValue(valueName)?.ToString() });
                         }
 
                         if (!RetainedSettings.RegistryInventory.Remove(fullPath)) // remove value from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
@@ -681,7 +707,7 @@ namespace WinChangeMonitor
 
                     if (!RetainedSettings.ServicesInventory.ContainsKey(service.ServiceName))
                     {
-                        this.servicesAdded[service.ServiceName] = new ServiceInfo(service);
+                        this.servicesAdded[service.ServiceName] = ServiceInfo.Parse(service);
                     }
                     else // both preinstall and postinstall inventories contain the service, check to see if it was modified
                     {
@@ -694,7 +720,7 @@ namespace WinChangeMonitor
                             (service.ServicesDependedOn.Length != RetainedSettings.ServicesInventory[service.ServiceName].ServiceNamesDependedOn.Count))
                         {
                             this.servicesModified[service.ServiceName] = new ServiceDiff(RetainedSettings.ServicesInventory[service.ServiceName],
-                                                                                         new ServiceInfo(service));
+                                                                                         ServiceInfo.Parse(service));
                         }
                         else // everything else matches, now check to see if any of the services depended on changed
                         {
@@ -711,7 +737,7 @@ namespace WinChangeMonitor
                             if (changed)
                             {
                                 this.servicesModified[service.ServiceName] = new ServiceDiff(RetainedSettings.ServicesInventory[service.ServiceName],
-                                                                                             new ServiceInfo(service));
+                                                                                             ServiceInfo.Parse(service));
                             }
                         }
 
@@ -746,7 +772,7 @@ namespace WinChangeMonitor
 
                     foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in RetainedSettings.FoldersToTrack)
                     {
-                        PostInstallInventoryDirectory(folder.Folder, folder.IncludeSubDirectories);
+                        PostInstallInventoryDirectory(folder.Folder, folder.IncludeSubFolders);
                     }
 
                     this.postInstallFoldersFinished = DateTime.Now;
@@ -903,6 +929,7 @@ namespace WinChangeMonitor
         {
             try
             {
+                RetainedSettings.DeleteCommonInfo();
                 RetainedSettings.DeleteFileSystemSettings();
                 RetainedSettings.DeleteRegistrySettings();
                 RetainedSettings.DeleteServicesSettings();
@@ -930,23 +957,66 @@ namespace WinChangeMonitor
             }
         }
 
-        private void bwLoader_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void WinChangeMonitorForm_FormClosing(Object sender, FormClosingEventArgs e)
         {
             try
             {
-                SplashScreen.Close();
+                if (this.ConfirmOnClose && MessageBox.Show("Are you sure you want to close the program?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.No)
+                {
+                    e.Cancel = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void tStatus_Tick(Object sender, EventArgs e)
+        {
+            try
+            {
+                if (this.operation != null)
+                {
+                    if (this.current != null)
+                    {
+                        Utilities.ControlSetText(this.lStatus, $"{this.operation} - {this.current}");
+                    }
+                    else // gracefully handle the case where current isn't set
+                    {
+                        Utilities.ControlSetText(this.lStatus, this.operation);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+        private void bwLoader_RunWorkerCompleted(Object sender, RunWorkerCompletedEventArgs e)
+        {
+            try
+            {
+                this.loadFinished = DateTime.Now;
+
+                this.Location = SplashScreen.Location;
+                this.WindowState = SplashScreen.WindowState;
+
+                this.Show();
+
+                SplashScreen.Hide();
 
                 this.lStatus.Text = "";
 
                 if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
                 {
-                    RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder(@"C:\", false));
+                    RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder { Folder = @"C:\", IncludeSubFolders = true });
 
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(HKCR, false));
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(HKCU, false));
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(HKLM, false));
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(HKU, false));
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey(HKCC, false));
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCR, IncludeSubKeys = true });
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCU, IncludeSubKeys = true });
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKLM, IncludeSubKeys = true });
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKU, IncludeSubKeys = true });
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCC, IncludeSubKeys = true });
 
                     this.cbFileSystemMonitor.Checked = true;
                     this.dgvFoldersToTrack.Visible = this.bAddFolder.Visible = this.bRemoveFolder.Visible = true;
@@ -958,6 +1028,11 @@ namespace WinChangeMonitor
                 }
                 else // a previous inventory exists
                 {
+                    this.tbOutput.AppendText($"Loaded in {this.loadFinished - this.loadStarted}{Environment.NewLine}");
+                    this.tbOutput.AppendText($"{RetainedSettings.FileSystemInventory.Keys.Count.ToString("N0")} file system items{Environment.NewLine}");
+                    this.tbOutput.AppendText($"{RetainedSettings.RegistryInventory.Keys.Count.ToString("N0")} registry items{Environment.NewLine}");
+                    this.tbOutput.AppendText($"{RetainedSettings.ServicesInventory.Keys.Count.ToString("N0")} services items{Environment.NewLine}");
+
                     if (RetainedSettings.PreInstallFileSystemFinished != null)
                     {
                         this.cbFileSystemMonitor.Checked = true;

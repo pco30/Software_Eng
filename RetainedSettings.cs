@@ -1,15 +1,31 @@
-﻿using System;
+﻿using MessagePack;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace WinChangeMonitor
 {
     public static class RetainedSettings
     {
+        [MessagePackObject]
+        public class CommonInfo
+        {
+            [Key(0)]
+            public int FileSystemInventoryCount { get; set; }
+
+            [Key(1)]
+            public int RegistryInventoryCount { get; set; }
+
+            [Key(2)]
+            public int ServicesInventoryCount { get; set; }
+        }
+
+        private static int FileSystemInventoryCount = 0, RegistryInventoryCount = 0, ServicesInventoryCount = 0;
+
         // File System Monitor enabled = whether FileSystem.json exists
         //     Folders to track = dtFoldersToTrack
         //     Pre-Install finised = preInstallFoldersFinished
@@ -23,28 +39,44 @@ namespace WinChangeMonitor
         //     Inventory = servicesPreInstall
         private static SplashScreenForm SplashScreen = null;
 
+        [MessagePackObject]
         public class FileSystemSettings
         {
+            [MessagePackObject]
             public class TrackedFolder
             {
-                [JsonInclude]
+                [Key(0)]
                 public String Folder { get; set; }
-                [JsonInclude]
-                public Boolean IncludeSubDirectories { get; set; }
 
-                public TrackedFolder(String folder, Boolean includeSubDirectories)
+                [Key(1)]
+                public Boolean IncludeSubFolders { get; set; }
+            }
+
+            [MessagePackObject]
+            public class FileSystemEntryInfo : IMessagePackSerializationCallbackReceiver
+            {
+                [Key(0)]
+                public Boolean IsFolder { get; set; }
+
+                public void OnBeforeSerialize()
                 {
-                    this.Folder = folder;
-                    this.IncludeSubDirectories = includeSubDirectories;
+                    // not used, only present to satisfy IMessagePackSerializationCallbackReceiver interface member requirement
+                }
+
+                public void OnAfterDeserialize()
+                {
+                    WinChangeMonitorForm.SplashScreen.IncrementStatus();
                 }
             }
 
-            [JsonInclude]
+            [Key(0)]
             public List<TrackedFolder> FoldersToTrack = new List<TrackedFolder>();
-            [JsonInclude]
+
+            [Key(1)]
             public DateTime? PreInstallFinished = null;
-            [JsonInclude]
-            public SortedDictionary<String, Boolean> Inventory = new SortedDictionary<String, Boolean>(); // key is full path to file/folder, value is whether this is a folder or file (true if folder, false if file)
+
+            [Key(2)]
+            public SortedDictionary<String, FileSystemEntryInfo> Inventory = new SortedDictionary<String, FileSystemEntryInfo>(); // key is full path to file/folder, value is whether this is a folder or file (true if folder, false if file)
         }
 
         private static FileSystemSettings FileSystem = null;
@@ -75,7 +107,7 @@ namespace WinChangeMonitor
             }
         }
 
-        public static SortedDictionary<String, Boolean> FileSystemInventory
+        public static SortedDictionary<String, FileSystemSettings.FileSystemEntryInfo> FileSystemInventory
         {
             get
             {
@@ -88,29 +120,27 @@ namespace WinChangeMonitor
             }
         }
 
+        [MessagePackObject]
         public class RegistrySettings
         {
+            [MessagePackObject]
             public class TrackedKey
             {
-                [JsonInclude]
+                [Key(0)]
                 public String Key { get; set; }
-                [JsonInclude]
-                public Boolean IncludeSubKeys { get; set; }
 
-                public TrackedKey(String key, Boolean includeSubKeys)
-                {
-                    this.Key = key;
-                    this.IncludeSubKeys = includeSubKeys;
-                }
+                [Key(1)]
+                public Boolean IncludeSubKeys { get; set; }
             }
 
-            [JsonInclude]
+            [Key(0)]
             public List<TrackedKey> KeysToTrack = new List<TrackedKey>();
-            [JsonInclude]
-            public DateTime? PreInstallFinished = null;
-            [JsonInclude]
-            public SortedDictionary<String, RegistryEntryInfo> Inventory = new SortedDictionary<String, RegistryEntryInfo>(); // key is full path to key/value, value is RegistryEntryInfo for value or null if key
 
+            [Key(1)]
+            public DateTime? PreInstallFinished = null;
+
+            [Key(2)]
+            public SortedDictionary<String, RegistryEntryInfo> Inventory = new SortedDictionary<String, RegistryEntryInfo>(); // key is full path to key/value, value is RegistryEntryInfo for value or null if key
         }
 
         private static RegistrySettings Registry = null;
@@ -154,11 +184,13 @@ namespace WinChangeMonitor
             }
         }
 
-        private class ServicesSettings
+        [MessagePackObject]
+        public class ServicesSettings
         {
-            [JsonInclude]
+            [Key(0)]
             public DateTime? PreInstallFinished = null;
-            [JsonInclude]
+
+            [Key(1)]
             public SortedDictionary<String, ServiceInfo> Inventory = new SortedDictionary<String, ServiceInfo>(); // key is service name, value is ServiceInfo for service
         }
 
@@ -203,6 +235,7 @@ namespace WinChangeMonitor
 
                 if (!Initialized)
                 {
+                    LoadCommonInfo();
                     LoadFileSystemSettings();
                     LoadRegistrySettings();
                     LoadServicesSettings();
@@ -218,18 +251,35 @@ namespace WinChangeMonitor
 
         private static String DirectoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-        private static JsonSerializerOptions SerializerOptions = new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+        public static void SaveCommonInfo(String fileName = "_Common.bin")
+        {
+            try
+            {
+                CommonInfo commonInfo = new CommonInfo {
+                    FileSystemInventoryCount = FileSystem.Inventory.Count,
+                    RegistryInventoryCount = Registry.Inventory.Count,
+                    ServicesInventoryCount = Services.Inventory.Count
+                };
+                Byte[] bytes = MessagePackSerializer.Serialize(commonInfo);
+                String filePath = Path.Combine(DirectoryName, fileName);
+                File.WriteAllBytes(filePath, bytes);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
 
-        public static void SaveFileSystemSettings(String fileName = "FileSystem.json")
+        public static void SaveFileSystemSettings(String fileName = "_FileSystem.bin")
         {
             try
             {
                 if (FileSystem != null)
                 {
                     
-                    String jsonString = JsonSerializer.Serialize(FileSystem, SerializerOptions);
+                    Byte[] bytes = MessagePackSerializer.Serialize(FileSystem);
                     String filePath = Path.Combine(DirectoryName, fileName);
-                    File.WriteAllText(filePath, jsonString);
+                    File.WriteAllBytes(filePath, bytes);
                 }
             }
             catch (Exception ex)
@@ -238,15 +288,15 @@ namespace WinChangeMonitor
             }
         }
 
-        public static void SaveRegistrySettings(String fileName = "Registry.json")
+        public static void SaveRegistrySettings(String fileName = "_Registry.bin")
         {
             try
             {
                 if (Registry != null)
                 {
-                    String jsonString = JsonSerializer.Serialize(Registry, SerializerOptions);
+                    Byte[] bytes = MessagePackSerializer.Serialize(Registry);
                     String filePath = Path.Combine(DirectoryName, fileName);
-                    File.WriteAllText(filePath, jsonString);
+                    File.WriteAllBytes(filePath, bytes);
                 }
             }
             catch (Exception ex)
@@ -255,15 +305,15 @@ namespace WinChangeMonitor
             }
         }
 
-        public static void SaveServicesSettings(String fileName = "Services.json")
+        public static void SaveServicesSettings(String fileName = "_Services.bin")
         {
             try
             {
                 if (Services != null)
                 {
-                    String jsonString = JsonSerializer.Serialize(Services, SerializerOptions);
+                    Byte[] bytes = MessagePackSerializer.Serialize(Services);
                     String filePath = Path.Combine(DirectoryName, fileName);
-                    File.WriteAllText(filePath, jsonString);
+                    File.WriteAllBytes(filePath, bytes);
                 }
             }
             catch (Exception ex)
@@ -272,7 +322,27 @@ namespace WinChangeMonitor
             }
         }
 
-        public static void LoadFileSystemSettings(String fileName = "FileSystem.json")
+        public static void LoadCommonInfo(String fileName = "_Common.bin")
+        {
+            try
+            {
+                String filePath = Path.Combine(DirectoryName, fileName);
+                if (File.Exists(filePath))
+                {
+                    Byte[] bytes = File.ReadAllBytes(filePath);
+                    CommonInfo commonInfo = MessagePackSerializer.Deserialize<CommonInfo>(bytes);
+                    FileSystemInventoryCount = commonInfo.FileSystemInventoryCount;
+                    RegistryInventoryCount = commonInfo.RegistryInventoryCount;
+                    ServicesInventoryCount = commonInfo.ServicesInventoryCount;
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        public static void LoadFileSystemSettings(String fileName = "_FileSystem.bin")
         {
             try
             {
@@ -281,10 +351,10 @@ namespace WinChangeMonitor
                 {
                     if (SplashScreen != null)
                     {
-                        SplashScreen.InitializeStatus("Loading File System Inventory");
+                        SplashScreen.InitializeStatus("Loading File System Inventory", FileSystemInventoryCount);
                     }
-                    String jsonString = File.ReadAllText(filePath);
-                    FileSystem = JsonSerializer.Deserialize<FileSystemSettings>(jsonString, SerializerOptions);
+                    Byte[] bytes = File.ReadAllBytes(filePath);
+                    FileSystem = MessagePackSerializer.Deserialize<FileSystemSettings>(bytes);
                 }
                 else
                 {
@@ -297,7 +367,7 @@ namespace WinChangeMonitor
             }
         }
 
-        public static void LoadRegistrySettings(String fileName = "Registry.json")
+        public static void LoadRegistrySettings(String fileName = "_Registry.bin")
         {
             try
             {
@@ -306,10 +376,10 @@ namespace WinChangeMonitor
                 {
                     if (SplashScreen != null)
                     {
-                        SplashScreen.InitializeStatus("Loading Registry Inventory");
+                        SplashScreen.InitializeStatus("Loading Registry Inventory", RegistryInventoryCount);
                     }
-                    String jsonString = File.ReadAllText(filePath);
-                    Registry = JsonSerializer.Deserialize<RegistrySettings>(jsonString, SerializerOptions);
+                    Byte[] bytes = File.ReadAllBytes(filePath);
+                    Registry = MessagePackSerializer.Deserialize<RegistrySettings>(bytes);
                 }
                 else
                 {
@@ -322,7 +392,7 @@ namespace WinChangeMonitor
             }
         }
 
-        public static void LoadServicesSettings(String fileName = "Services.json")
+        public static void LoadServicesSettings(String fileName = "_Services.bin")
         {
             try
             {
@@ -331,10 +401,10 @@ namespace WinChangeMonitor
                 {
                     if (SplashScreen != null)
                     {
-                        SplashScreen.InitializeStatus("Loading Services Inventory");
+                        SplashScreen.InitializeStatus("Loading Services Inventory", ServicesInventoryCount);
                     }
-                    String jsonString = File.ReadAllText(filePath);
-                    Services = JsonSerializer.Deserialize<ServicesSettings>(jsonString, SerializerOptions);
+                    Byte[] bytes = File.ReadAllBytes(filePath);
+                    Services = MessagePackSerializer.Deserialize<ServicesSettings>(bytes);
                 }
                 else
                 {
@@ -347,7 +417,24 @@ namespace WinChangeMonitor
             }
         }
 
-        public static void DeleteFileSystemSettings(String fileName = "FileSystem.json")
+        public static void DeleteCommonInfo(String fileName = "_Common.bin")
+        {
+            try
+            {
+                String filePath = Path.Combine(DirectoryName, fileName);
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+                FileSystemInventoryCount = RegistryInventoryCount = ServicesInventoryCount = 0;
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        public static void DeleteFileSystemSettings(String fileName = "_FileSystem.bin")
         {
             try
             {
@@ -364,7 +451,7 @@ namespace WinChangeMonitor
             }
         }
 
-        public static void DeleteRegistrySettings(String fileName = "Registry.json")
+        public static void DeleteRegistrySettings(String fileName = "_Registry.bin")
         {
             try
             {
@@ -381,7 +468,7 @@ namespace WinChangeMonitor
             }
         }
 
-        public static void DeleteServicesSettings(String fileName = "Services.json")
+        public static void DeleteServicesSettings(String fileName = "_Services.bin")
         {
             try
             {

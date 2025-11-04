@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MessagePack;
+using System;
 using System.Collections.Generic;
 using System.ServiceProcess;
 using System.Text;
@@ -6,51 +7,51 @@ using System.Text.Json.Serialization;
 
 namespace WinChangeMonitor
 {
-    public class ServiceInfo : IJsonOnDeserializing
+    [MessagePackObject]
+    public class ServiceInfo : IMessagePackSerializationCallbackReceiver
     {
-        [JsonInclude]
+        [Key(0)]
         public Boolean CanPauseAndContinue { get; set; }
-        [JsonInclude]
+
+        [Key(1)]
         public Boolean CanShutdown { get; set; }
-        [JsonInclude]
+
+        [Key(2)]
         public Boolean CanStop { get; set; }
-        [JsonInclude]
+
+        [Key(3)]
         public String DisplayName { get; set; }
-        [JsonInclude]
+
+        [Key(4)]
         public List<String> ServiceNamesDependedOn { get; set; }
-        [JsonInclude]
+
+        [Key(5)]
         public ServiceType ServiceType { get; set; }
-        [JsonInclude]
+
+        [Key(6)]
         public ServiceStartMode StartType { get; set; }
 
+        [IgnoreMember]
         private StringBuilder printableNamesDependedOn = null;
 
-        [JsonConstructor]
-        public ServiceInfo(Boolean canPauseAndContinue, Boolean canShutdown, Boolean canStop, String displayName, List<String> serviceNamesDependedOn, ServiceType serviceType, ServiceStartMode startType)
+        public static ServiceInfo Parse(ServiceController service)
         {
-            this.CanPauseAndContinue = canPauseAndContinue;
-            this.CanShutdown = canShutdown;
-            this.CanStop = canStop;
-            this.DisplayName = displayName;
-            this.ServiceNamesDependedOn = serviceNamesDependedOn;
-            this.ServiceType = serviceType;
-            this.StartType = startType;
-        }
-
-        public ServiceInfo(ServiceController serviceController)
-        {
-            this.CanPauseAndContinue = serviceController.CanPauseAndContinue;
-            this.CanShutdown = serviceController.CanShutdown;
-            this.CanStop = serviceController.CanStop;
-            this.DisplayName = serviceController.DisplayName;
-            this.ServiceNamesDependedOn = new List<String>();
-
-            for (Int32 i = 0; i < serviceController.ServicesDependedOn.Length; ++i)
+            List<String> serviceNamesDependedOn = new List<String>();
+            foreach (ServiceController serviceDependedOn in service.ServicesDependedOn)
             {
-                this.ServiceNamesDependedOn.Add(serviceController.ServicesDependedOn[i].ServiceName);
+                serviceNamesDependedOn.Add(serviceDependedOn.ServiceName);
             }
-            this.ServiceType = serviceController.ServiceType;
-            this.StartType = serviceController.StartType;
+
+            return new ServiceInfo
+            {
+                CanPauseAndContinue = service.CanPauseAndContinue,
+                CanShutdown = service.CanShutdown,
+                CanStop = service.CanStop,
+                DisplayName = service.DisplayName,
+                ServiceNamesDependedOn = serviceNamesDependedOn,
+                ServiceType = service.ServiceType,
+                StartType = service.StartType
+            };
         }
 
         public override String ToString()
@@ -70,19 +71,17 @@ namespace WinChangeMonitor
                 }
             }
 
-            return $"{this.CanPauseAndContinue}, {this.CanShutdown}, {this.CanStop}, {this.DisplayName}, ({this.printableNamesDependedOn.ToString()}), {this.ServiceType}, {this.StartType}";
+            return $"{this.CanPauseAndContinue}, {this.CanShutdown}, {this.CanStop}, {this.DisplayName}, ({this.printableNamesDependedOn}), {this.ServiceType}, {this.StartType}";
         }
 
-        public void OnDeserializing()
+        public void OnBeforeSerialize()
         {
-            try
-            {
-                WinChangeMonitorForm.SplashScreen?.IncrementStatus(); // null-conditional operator ?. calls IncrementStatus() on SplashScreen if SplashScreen is not null. will do nothing if SplashScreen is null
-            }
-            catch (Exception ex)
-            {
-                Utilities.HandleException(ex);
-            }
+            // not used, only present to satisfy IMessagePackSerializationCallbackReceiver interface member requirement
+        }
+
+        public void OnAfterDeserialize()
+        {
+            WinChangeMonitorForm.SplashScreen.IncrementStatus();
         }
     }
 
