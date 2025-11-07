@@ -1,10 +1,11 @@
-﻿using Microsoft.Win32;
+﻿using BrightIdeasSoftware;
+using JCS;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.IO;
-using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using System.Security;
 using System.ServiceProcess;
 using System.Windows.Forms;
@@ -42,11 +43,19 @@ namespace WinChangeMonitor
         private static String HKU = "HKEY_USERS";
         private static String HKCC = "HKEY_CURRENT_CONFIG";
 
+        private static Color ToggleSwitchOnColor = Color.Green;
+
         public WinChangeMonitorForm()
         {
             try
             {
                 InitializeComponent();
+
+                this.cbFileSystemMonitor.SetRenderer(new ToggleSwitchIphoneRenderer() { LeftSideBackColor1 = ToggleSwitchOnColor });
+                this.cbRegistryMonitor.SetRenderer(new ToggleSwitchIphoneRenderer() { LeftSideBackColor1 = ToggleSwitchOnColor });
+                this.cbServicesMonitor.SetRenderer(new ToggleSwitchIphoneRenderer() { LeftSideBackColor1 = ToggleSwitchOnColor });
+
+                this.statusStrip1.Renderer = new CustomRenderer();
             }
             catch (Exception ex)
             {
@@ -56,10 +65,33 @@ namespace WinChangeMonitor
 
         private DateTime loadStarted, loadFinished;
 
+        private void AutoSizeColumns(ObjectListView olv)
+        {
+            try
+            {
+                if (olv.Columns.Count > 0)
+                {
+                    int colWidth = olv.ClientSize.Width / olv.Columns.Count;
+
+                    foreach (OLVColumn column in olv.Columns)
+                    {
+                        column.Width = colWidth;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
         private void WinChangeMonitorForm_Load(Object sender, EventArgs e)
         {
             try
             {
+                AutoSizeColumns(this.olvFoldersToTrack);
+                AutoSizeColumns(this.olvKeysToTrack);
+
                 SplashScreen = new SplashScreenForm(this);
 
                 this.MinimumSize = this.Size;
@@ -83,17 +115,23 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.bPreInstall.Enabled = false;
+                if (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked)
+                {
+                    this.bPreInstall.Enabled = false;
 
-                this.cbFileSystemMonitor.Enabled = this.dgvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
-                this.cbRegistryMonitor.Enabled = this.dgvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
-                this.cbServicesMonitor.Enabled = false;
-                this.bPostInstall.Enabled = this.bStartFresh.Enabled = false;
+                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
+                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
+                    this.cbServicesMonitor.Enabled = false;
+                    this.bPostInstall.Enabled = this.bStartFresh.Enabled = false;
 
-                this.tStatus.Enabled = true;
-                this.tStatus.Start();
+                    this.tStatus.Start();
 
-                this.bwPreInstall.RunWorkerAsync();
+                    this.bwPreInstall.RunWorkerAsync();
+                }
+                else
+                {
+                    MessageBox.Show("Please enable at least one monitor to perform a Pre-Installation Inventory.", "Enable Monitor(s)", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             catch (Exception ex)
             {
@@ -254,12 +292,12 @@ namespace WinChangeMonitor
             {
                 if (this.cbFileSystemMonitor.Checked && RetainedSettings.FoldersToTrack.Count == 0)
                 {
-                    Utilities.CheckBoxSetChecked(this.cbFileSystemMonitor, false);
+                    Utilities.ToggleSwitchSetChecked(this.cbFileSystemMonitor, false);
                 }
 
                 if (this.cbRegistryMonitor.Checked && RetainedSettings.KeysToTrack.Count == 0)
                 {
-                    Utilities.CheckBoxSetChecked(this.cbRegistryMonitor, false);
+                    Utilities.ToggleSwitchSetChecked(this.cbRegistryMonitor, false);
                 }
 
                 Utilities.TextBoxClear(this.tbOutput);
@@ -339,7 +377,8 @@ namespace WinChangeMonitor
 
                 RetainedSettings.SaveCommonInfo();
 
-                Utilities.ControlSetText(this.lStatus, "");;
+
+                this.tsslStatus.Text = "";
             }
             catch (Exception ex)
             {
@@ -355,7 +394,7 @@ namespace WinChangeMonitor
 
                 this.bPostInstall.Enabled = this.bStartFresh.Enabled = true;
 
-                this.lStatus.Text = "Current Folder/Key/Service Displayed Here";
+                this.tsslStatus.Text = "Current Folder/Key/Service Displayed Here";
             }
             catch (Exception ex)
             {
@@ -369,8 +408,8 @@ namespace WinChangeMonitor
             {
                 this.bPostInstall.Enabled = false;
 
-                this.cbFileSystemMonitor.Enabled = this.dgvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
-                this.cbRegistryMonitor.Enabled = this.dgvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
+                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
+                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                 this.cbServicesMonitor.Enabled = false;
                 this.bPreInstall.Enabled = this.bStartFresh.Enabled = false;
 
@@ -386,8 +425,15 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.dgvFoldersToTrack.Visible = this.bAddFolder.Visible = this.bRemoveFolder.Visible = this.cbFileSystemMonitor.Checked;
-
+                this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.cbFileSystemMonitor.Checked;
+                if (this.olvFoldersToTrack.SelectedIndex != -1)
+                {
+                    this.bRemoveFolder.Enabled = true;
+                }
+                else
+                {
+                    this.bRemoveFolder.Enabled = false;
+                }
                 this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);
             }
             catch (Exception ex)
@@ -400,8 +446,15 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.dgvKeysToTrack.Visible = this.bAddKey.Visible = this.bRemoveKey.Visible = this.cbRegistryMonitor.Checked;
-
+                this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.cbRegistryMonitor.Checked;
+                if (this.olvKeysToTrack.SelectedIndex != -1)
+                {
+                    this.bRemoveKey.Enabled = true;
+                }
+                else
+                {
+                    this.bRemoveKey.Enabled = false;
+                }
                 this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);
             }
             catch (Exception ex)
@@ -426,11 +479,16 @@ namespace WinChangeMonitor
         {
             try
             {
-                DialogResult result = MessageBox.Show($"Are you sure you want to remove {this.dgvFoldersToTrack.CurrentRow.Cells[0].Value}?", "Remove Folder?", MessageBoxButtons.YesNo);
+                DialogResult result = MessageBox.Show($"Are you sure you want to remove {this.olvFoldersToTrack.Items[this.olvFoldersToTrack.SelectedIndex].Text}?", "Remove Folder?", MessageBoxButtons.YesNo);
 
                 if (result == DialogResult.Yes)
                 {
-                    RetainedSettings.FoldersToTrack.RemoveAt(this.dgvFoldersToTrack.CurrentRow.Index);
+                    RetainedSettings.FoldersToTrack.RemoveAt(this.olvFoldersToTrack.SelectedIndex);
+
+                    this.olvFoldersToTrack.ClearObjects();
+                    this.olvFoldersToTrack.AddObjects(RetainedSettings.FoldersToTrack);
+
+                    AutoSizeColumns(this.olvFoldersToTrack);
 
                     if (RetainedSettings.FoldersToTrack.Count == 0)
                     {
@@ -438,6 +496,9 @@ namespace WinChangeMonitor
 
                         this.bPreInstall.Enabled = (this.cbRegistryMonitor.Checked && RetainedSettings.KeysToTrack.Count > 0) || this.cbServicesMonitor.Checked;
                     }
+
+                    this.olvFoldersToTrack.SelectedItems.Clear();
+                    this.bRemoveFolder.Enabled = false;
                 }
             }
             catch (Exception ex)
@@ -450,11 +511,16 @@ namespace WinChangeMonitor
         {
             try
             {
-                DialogResult result = MessageBox.Show($"Are you sure you want to remove {this.dgvKeysToTrack.CurrentRow.Cells[0].Value}?", "Remove Key?", MessageBoxButtons.YesNo);
+                DialogResult result = MessageBox.Show($"Are you sure you want to remove {this.olvKeysToTrack.Items[this.olvKeysToTrack.SelectedIndex].Text}?", "Remove Key?", MessageBoxButtons.YesNo);
 
                 if (result == DialogResult.Yes)
                 {
-                    RetainedSettings.KeysToTrack.RemoveAt(this.dgvKeysToTrack.CurrentRow.Index);
+                    RetainedSettings.KeysToTrack.RemoveAt(this.olvKeysToTrack.SelectedIndex);
+
+                    this.olvKeysToTrack.ClearObjects();
+                    this.olvKeysToTrack.AddObjects(RetainedSettings.KeysToTrack);
+
+                    AutoSizeColumns(this.olvKeysToTrack);
 
                     if (RetainedSettings.KeysToTrack.Count == 0)
                     {
@@ -462,6 +528,9 @@ namespace WinChangeMonitor
 
                         this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked && RetainedSettings.FoldersToTrack.Count > 0) || this.cbServicesMonitor.Checked;
                     }
+
+                    this.olvKeysToTrack.SelectedItems.Clear();
+                    this.bRemoveKey.Enabled = false;
                 }
             }
             catch (Exception ex)
@@ -479,12 +548,23 @@ namespace WinChangeMonitor
                 if (result == DialogResult.Yes)
                 {
                     RetainedSettings.DeleteCommonInfo();
+
                     RetainedSettings.DeleteFileSystemSettings();
+                    foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in this.olvFoldersToTrack.Objects)
+                    {
+                        RetainedSettings.FoldersToTrack.Add(folder);
+                    }
+
                     RetainedSettings.DeleteRegistrySettings();
+                    foreach( RetainedSettings.RegistrySettings.TrackedKey key in this.olvKeysToTrack.Objects)
+                    {
+                        RetainedSettings.KeysToTrack.Add(key);
+                    }
+
                     RetainedSettings.DeleteServicesSettings();
 
-                    this.cbFileSystemMonitor.Enabled = this.dgvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
-                    this.cbRegistryMonitor.Enabled = this.dgvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
+                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
+                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
                     this.cbServicesMonitor.Enabled = true;
 
                     this.bPreInstall.Enabled = true;
@@ -509,9 +589,13 @@ namespace WinChangeMonitor
                 {
                     RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder { Folder = this.fbdAddFolder.SelectedPath, IncludeSubFolders = false });
 
-                    this.dgvFoldersToTrack.ClearSelection();
-                    this.dgvFoldersToTrack.CurrentCell = this.dgvFoldersToTrack.Rows[this.dgvFoldersToTrack.Rows.Count - 1].Cells[1];
-                    this.dgvFoldersToTrack.Rows[this.dgvFoldersToTrack.Rows.Count - 1].Cells[1].Selected = true;
+                    this.olvFoldersToTrack.ClearObjects();
+                    this.olvFoldersToTrack.AddObjects(RetainedSettings.FoldersToTrack);
+
+                    AutoSizeColumns(this.olvFoldersToTrack);
+
+                    this.olvFoldersToTrack.DeselectAll();
+                    this.olvFoldersToTrack.Items[this.olvFoldersToTrack.Items.Count - 1].Selected = true;
                 }
             }
             catch (Exception ex)
@@ -528,12 +612,15 @@ namespace WinChangeMonitor
 
                 if (result == DialogResult.OK)
                 {
-                    
                     RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = this.rkbdAddKey.SelectedKeyPath, IncludeSubKeys = false });
 
-                    this.dgvKeysToTrack.ClearSelection();
-                    this.dgvKeysToTrack.CurrentCell = this.dgvKeysToTrack.Rows[this.dgvKeysToTrack.Rows.Count - 1].Cells[1];
-                    this.dgvKeysToTrack.Rows[this.dgvKeysToTrack.Rows.Count - 1].Cells[1].Selected = true;
+                    this.olvKeysToTrack.ClearObjects();
+                    this.olvKeysToTrack.AddObjects(RetainedSettings.KeysToTrack);
+
+                    AutoSizeColumns(this.olvKeysToTrack);
+
+                    this.olvKeysToTrack.DeselectAll();
+                    this.olvKeysToTrack.Items[this.olvKeysToTrack.Items.Count - 1].Selected = true;
                 }
             }
             catch (Exception ex)
@@ -622,7 +709,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                Utilities.ControlSetText(this.lStatus, key.ToString());
+                this.tsslStatus.Text = key.ToString();
 
                 String[] valueNames = key.GetValueNames();
 
@@ -703,7 +790,7 @@ namespace WinChangeMonitor
 
                 foreach (ServiceController service in services)
                 {
-                    Utilities.ControlSetText(this.lStatus, service.ServiceName);
+                    this.tsslStatus.Text = service.ServiceName;
 
                     if (!RetainedSettings.ServicesInventory.ContainsKey(service.ServiceName))
                     {
@@ -917,7 +1004,7 @@ namespace WinChangeMonitor
                     }
                 }
 
-                Utilities.ControlSetText(this.lStatus, "");
+                this.tsslStatus.Text = "";
             }
             catch (Exception ex)
             {
@@ -934,8 +1021,8 @@ namespace WinChangeMonitor
                 RetainedSettings.DeleteRegistrySettings();
                 RetainedSettings.DeleteServicesSettings();
 
-                this.cbFileSystemMonitor.Enabled = this.dgvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
-                this.cbRegistryMonitor.Enabled = this.dgvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
+                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
+                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
                 this.cbServicesMonitor.Enabled = true;
                 this.bPreInstall.Enabled = true;
             }
@@ -961,10 +1048,173 @@ namespace WinChangeMonitor
         {
             try
             {
-                if (this.ConfirmOnClose && MessageBox.Show("Are you sure you want to close the program?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.No)
+                if (this.ConfirmOnClose && MessageBox.Show("Are you sure you want to close the program?", "Confirm Exit", MessageBoxButtons.YesNo) == DialogResult.No)
                 {
                     e.Cancel = true;
                 }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void exitToolStripMenuItem_Click(Object sender, EventArgs e)
+        {
+            try
+            {
+                Application.Exit();
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void WinChangeMonitorForm_Resize(Object sender, EventArgs e)
+        {
+            try
+            {
+                AutoSizeColumns(this.olvFoldersToTrack);
+                AutoSizeColumns(this.olvKeysToTrack);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvFoldersToTrack_CellClick(Object sender, CellClickEventArgs e)
+        {
+            try
+            {
+                if (e.Item != null)
+                {
+                    this.bRemoveFolder.Enabled = true;
+                    e.Item.Selected = true;
+                }
+                else
+                {
+                    this.bRemoveFolder.Enabled = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvKeysToTrack_CellClick(Object sender, CellClickEventArgs e)
+        {
+            try
+            {
+                if (e.Item != null)
+                {
+                    this.bRemoveKey.Enabled = true;
+                    e.Item.Selected = true;
+                }
+                else
+                {
+                    this.bRemoveKey.Enabled = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvFoldersToTrack_SubItemChecking(Object sender, SubItemCheckingEventArgs e)
+        {
+            try
+            {
+                RetainedSettings.FoldersToTrack[e.ListViewItem.Index].IncludeSubFolders = (e.NewValue == CheckState.Checked);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvKeysToTrack_SubItemChecking(Object sender, SubItemCheckingEventArgs e)
+        {
+            try
+            {
+                RetainedSettings.KeysToTrack[e.ListViewItem.Index].IncludeSubKeys = (e.NewValue == CheckState.Checked);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvFoldersToTrack_SelectedIndexChanged(Object sender, EventArgs e)
+        {
+            try
+            {
+                if (this.olvFoldersToTrack.SelectedIndex != -1)
+                {
+                    this.bRemoveFolder.Enabled = true;
+                }
+                else
+                {
+                    this.bRemoveFolder.Enabled = false;
+                }
+            }
+            catch(Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvKeysToTrack_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                if (this.olvKeysToTrack.SelectedIndex != -1)
+                {
+                    this.bRemoveKey.Enabled = true;
+                }
+                else
+                {
+                    this.bRemoveKey.Enabled = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvFoldersToTrack_Resize(Object sender, EventArgs e)
+        {
+            try
+            {
+                AutoSizeColumns(this.olvFoldersToTrack);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvFoldersToTrack_EnabledChanged(Object sender, EventArgs e)
+        {
+            try
+            {
+                this.olvFoldersToTrack.SelectedItems.Clear();
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvKeysToTrack_EnabledChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                this.olvKeysToTrack.SelectedItems.Clear();
             }
             catch (Exception ex)
             {
@@ -980,11 +1230,11 @@ namespace WinChangeMonitor
                 {
                     if (this.current != null)
                     {
-                        Utilities.ControlSetText(this.lStatus, $"{this.operation} - {this.current}");
+                        this.tsslStatus.Text = $"{this.operation} - {this.current}";
                     }
                     else // gracefully handle the case where current isn't set
                     {
-                        Utilities.ControlSetText(this.lStatus, this.operation);
+                        this.tsslStatus.Text = this.operation;
                     }
                 }
             }
@@ -1006,7 +1256,7 @@ namespace WinChangeMonitor
 
                 SplashScreen.Hide();
 
-                this.lStatus.Text = "";
+                this.tsslStatus.Text = "Current Folder/Key/Service Displayed Here";
 
                 if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
                 {
@@ -1019,9 +1269,9 @@ namespace WinChangeMonitor
                     RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCC, IncludeSubKeys = true });
 
                     this.cbFileSystemMonitor.Checked = true;
-                    this.dgvFoldersToTrack.Visible = this.bAddFolder.Visible = this.bRemoveFolder.Visible = true;
+                    this.olvFoldersToTrack.Visible = this.bAddFolder.Visible = this.bRemoveFolder.Visible = true;
                     this.cbRegistryMonitor.Checked = true;
-                    this.dgvKeysToTrack.Visible = this.bAddKey.Visible = this.bRemoveKey.Visible = true;
+                    this.olvKeysToTrack.Visible = this.bAddKey.Visible = this.bRemoveKey.Visible = true;
                     this.cbServicesMonitor.Checked = true;
 
                     this.bPreInstall.Enabled = true;
@@ -1035,37 +1285,63 @@ namespace WinChangeMonitor
 
                     if (RetainedSettings.PreInstallFileSystemFinished != null)
                     {
-                        this.cbFileSystemMonitor.Checked = true;
-                        this.cbFileSystemMonitor.Enabled = false;
-                        this.dgvFoldersToTrack.Visible = this.bAddFolder.Visible = this.bRemoveFolder.Visible = true;
-                        this.dgvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
+                        this.cbFileSystemMonitor.Checked = true; 
                     }
+                    else
+                    {
+                        this.cbFileSystemMonitor.Checked = false;
+
+                    }
+                    this.cbFileSystemMonitor.Enabled = false;
+                    this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
 
                     if (RetainedSettings.PreInstallRegistryFinished != null)
                     {
                         this.cbRegistryMonitor.Checked = true;
-                        this.cbRegistryMonitor.Enabled = false;
-                        this.dgvKeysToTrack.Visible = this.bAddKey.Visible = this.bRemoveKey.Visible = true;
-                        this.dgvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                     }
+                    else
+                    {
+                        this.cbRegistryMonitor.Checked = false;
+                    }
+                    this.cbRegistryMonitor.Enabled = false;
+                    this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
 
                     if (RetainedSettings.PreInstallServicesFinished != null)
                     {
                         this.cbServicesMonitor.Checked = true;
-                        this.cbServicesMonitor.Enabled = false;
                     }
+                    else
+                    {
+                        this.cbServicesMonitor.Checked = false;
+                    }
+                    this.cbServicesMonitor.Enabled = false;
 
                     this.bPreInstall.Enabled = false;
                     this.bPostInstall.Enabled = true;
                     this.bStartFresh.Enabled = true;
                 }
 
-                this.dgvFoldersToTrack.DataSource = new BindingSource { DataSource = RetainedSettings.FoldersToTrack };
-                this.dgvKeysToTrack.DataSource = new BindingSource { DataSource = RetainedSettings.KeysToTrack };
+                this.olvFoldersToTrack.AddObjects(RetainedSettings.FoldersToTrack);
+                this.olvKeysToTrack.AddObjects(RetainedSettings.KeysToTrack);
             }
             catch (Exception ex)
             {
                 Utilities.HandleException(ex);
+            }
+        }
+    }
+
+    public class CustomRenderer : ToolStripRenderer
+    {
+        protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
+        {
+            if (e.Item is ToolStripStatusLabel)
+            {
+                TextRenderer.DrawText(e.Graphics, e.Text, e.TextFont, e.TextRectangle, e.TextColor, Color.Transparent, e.TextFormat | TextFormatFlags.EndEllipsis);
+            }
+            else
+            {
+                base.OnRenderItemText(e);
             }
         }
     }

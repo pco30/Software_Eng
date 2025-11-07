@@ -1,5 +1,4 @@
 ﻿using System;
-
 using System.Windows.Forms;
 
 namespace WinChangeMonitor
@@ -31,6 +30,26 @@ namespace WinChangeMonitor
             }
         }
 
+        delegate void ToggleSwitchSetCheckedDelegate(JCS.ToggleSwitch toggleSwitch, Boolean value);
+        public static void ToggleSwitchSetChecked(JCS.ToggleSwitch toggleSwitch, Boolean value)
+        {
+            try
+            {
+                if (toggleSwitch.InvokeRequired)
+                {
+                    toggleSwitch.Invoke(new ToggleSwitchSetCheckedDelegate(ToggleSwitchSetChecked), new object[] { toggleSwitch, value });
+                }
+                else
+                {
+                    toggleSwitch.Checked = value;
+                }
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+            }
+        }
+
         delegate void ControlSetTextDelegate(Control control, String text);
         public static void ControlSetText(Control control, String text)
         {
@@ -49,7 +68,7 @@ namespace WinChangeMonitor
             {
                 HandleException(ex);
             }
-        }
+        }        
 
         delegate void TextBoxAppendTextDelegate(TextBox textBox, String text);
         public static void TextBoxAppendText(TextBox textBox, String text)

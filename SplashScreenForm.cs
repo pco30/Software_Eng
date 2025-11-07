@@ -5,11 +5,9 @@ namespace WinChangeMonitor
 {
     public partial class SplashScreenForm : Form
     {
-        private WinChangeMonitorForm owner = null;
-
         public SplashScreenForm(WinChangeMonitorForm owner)
         {
-            this.owner = owner;
+            this.Owner = owner;
             InitializeComponent();
         }
 
@@ -45,11 +43,14 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.Location = this.Owner.Location;
+                if (this.Owner != null)
+                {
+                    this.Location = this.Owner.Location;
 
-                this.Size = this.Owner.Size;
+                    this.Size = this.Owner.Size;
 
-                this.Text = this.Owner.Text;
+                    this.Text = this.Owner.Text;
+                }
             }
             catch (Exception ex)
             {
@@ -61,7 +62,10 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.Owner.WindowState = this.WindowState;
+                if (this.Owner != null)
+                {
+                    this.Owner.WindowState = this.WindowState;
+                }
             }
             catch (Exception ex)
             {
@@ -73,14 +77,22 @@ namespace WinChangeMonitor
         {
             try
             {
-                if (this.ConfirmOnClose && MessageBox.Show("Are you sure you want to close the program?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.No)
+                if (this.Visible)
                 {
-                    e.Cancel = true;
-                }
-                else
-                {
-                    this.ConfirmOnClose = this.owner.ConfirmOnClose = false;
-                    Application.Exit();
+                    if (this.ConfirmOnClose && MessageBox.Show("Are you sure you want to close the program?", "Confirm Exit", MessageBoxButtons.YesNo) == DialogResult.No)
+                    {
+                        e.Cancel = true;
+                    }
+                    else
+                    {
+                        this.ConfirmOnClose = false;
+
+                        if (this.Owner is WinChangeMonitorForm)
+                        {
+                            ((WinChangeMonitorForm)this.Owner).ConfirmOnClose = false;
+                        }
+                        Application.Exit();
+                    }
                 }
             }
             catch (Exception ex)
@@ -93,7 +105,10 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.Owner.Location = this.Location;
+                if (this.Owner != null)
+                {
+                    this.Owner.Location = this.Location;
+                }
             }
             catch (Exception ex)
             {

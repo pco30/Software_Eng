@@ -63,7 +63,7 @@ namespace WinChangeMonitor
             // tReportStatus
             // 
             this.tReportStatus.Enabled = true;
-            this.tReportStatus.Interval = 500;
+            this.tReportStatus.Interval = 1000;
             this.tReportStatus.Tick += new System.EventHandler(this.tReportStatus_Tick);
             // 
             // SplashScreenForm
