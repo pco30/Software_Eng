@@ -36,6 +36,7 @@ namespace WinChangeMonitor
             this.tbOutput = new System.Windows.Forms.TextBox();
             this.bPostInstall = new System.Windows.Forms.Button();
             this.gbRegistryMonitor = new System.Windows.Forms.GroupBox();
+            this.bDefaultTrackedKeys = new System.Windows.Forms.Button();
             this.olvKeysToTrack = new BrightIdeasSoftware.ObjectListView();
             this.olvcKey = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.olvcIncludeSubKeys = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
@@ -49,6 +50,7 @@ namespace WinChangeMonitor
             this.bRemoveFolder = new System.Windows.Forms.Button();
             this.bAddFolder = new System.Windows.Forms.Button();
             this.gbFileSystemMonitor = new System.Windows.Forms.GroupBox();
+            this.bDefaultTrackedFolders = new System.Windows.Forms.Button();
             this.olvFoldersToTrack = new BrightIdeasSoftware.ObjectListView();
             this.olvcFolder = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.olvcIncludeSubFolders = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
@@ -60,11 +62,11 @@ namespace WinChangeMonitor
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.tsslStatus = new System.Windows.Forms.ToolStripStatusLabel();
-            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.gbRegistryMonitor.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.olvKeysToTrack)).BeginInit();
             this.gbServicesMonitor.SuspendLayout();
@@ -118,6 +120,7 @@ namespace WinChangeMonitor
             // 
             this.gbRegistryMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbRegistryMonitor.Controls.Add(this.bDefaultTrackedKeys);
             this.gbRegistryMonitor.Controls.Add(this.olvKeysToTrack);
             this.gbRegistryMonitor.Controls.Add(this.bAddKey);
             this.gbRegistryMonitor.Controls.Add(this.bRemoveKey);
@@ -128,6 +131,18 @@ namespace WinChangeMonitor
             this.gbRegistryMonitor.TabIndex = 6;
             this.gbRegistryMonitor.TabStop = false;
             this.gbRegistryMonitor.Text = "Registry Monitor";
+            // 
+            // bDefaultTrackedKeys
+            // 
+            this.bDefaultTrackedKeys.AutoSize = true;
+            this.bDefaultTrackedKeys.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.bDefaultTrackedKeys.Location = new System.Drawing.Point(77, 158);
+            this.bDefaultTrackedKeys.Name = "bDefaultTrackedKeys";
+            this.bDefaultTrackedKeys.Size = new System.Drawing.Size(78, 23);
+            this.bDefaultTrackedKeys.TabIndex = 12;
+            this.bDefaultTrackedKeys.Text = "Use Defaults";
+            this.bDefaultTrackedKeys.UseVisualStyleBackColor = true;
+            this.bDefaultTrackedKeys.Click += new System.EventHandler(this.bDefaultTrackedKeys_Click);
             // 
             // olvKeysToTrack
             // 
@@ -305,6 +320,7 @@ namespace WinChangeMonitor
             // 
             this.gbFileSystemMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbFileSystemMonitor.Controls.Add(this.bDefaultTrackedFolders);
             this.gbFileSystemMonitor.Controls.Add(this.olvFoldersToTrack);
             this.gbFileSystemMonitor.Controls.Add(this.bAddFolder);
             this.gbFileSystemMonitor.Controls.Add(this.bRemoveFolder);
@@ -315,6 +331,18 @@ namespace WinChangeMonitor
             this.gbFileSystemMonitor.TabIndex = 0;
             this.gbFileSystemMonitor.TabStop = false;
             this.gbFileSystemMonitor.Text = "File System Monitor";
+            // 
+            // bDefaultTrackedFolders
+            // 
+            this.bDefaultTrackedFolders.AutoSize = true;
+            this.bDefaultTrackedFolders.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.bDefaultTrackedFolders.Location = new System.Drawing.Point(77, 158);
+            this.bDefaultTrackedFolders.Name = "bDefaultTrackedFolders";
+            this.bDefaultTrackedFolders.Size = new System.Drawing.Size(78, 23);
+            this.bDefaultTrackedFolders.TabIndex = 11;
+            this.bDefaultTrackedFolders.Text = "Use Defaults";
+            this.bDefaultTrackedFolders.UseVisualStyleBackColor = true;
+            this.bDefaultTrackedFolders.Click += new System.EventHandler(this.bDefaultTrackedFolders_Click);
             // 
             // olvFoldersToTrack
             // 
@@ -451,6 +479,12 @@ namespace WinChangeMonitor
             this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.optionsToolStripMenuItem.Text = "&Options";
             // 
+            // settingsToolStripMenuItem
+            // 
+            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.settingsToolStripMenuItem.Text = "Settings";
+            // 
             // helpToolStripMenuItem
             // 
             this.helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -481,12 +515,6 @@ namespace WinChangeMonitor
             this.tsslStatus.Size = new System.Drawing.Size(231, 17);
             this.tsslStatus.Text = "Current Folder/Key/Service Displayed Here";
             // 
-            // settingsToolStripMenuItem
-            // 
-            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.settingsToolStripMenuItem.Text = "Settings";
-            // 
             // WinChangeMonitorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -510,9 +538,11 @@ namespace WinChangeMonitor
             this.Load += new System.EventHandler(this.WinChangeMonitorForm_Load);
             this.Resize += new System.EventHandler(this.WinChangeMonitorForm_Resize);
             this.gbRegistryMonitor.ResumeLayout(false);
+            this.gbRegistryMonitor.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.olvKeysToTrack)).EndInit();
             this.gbServicesMonitor.ResumeLayout(false);
             this.gbFileSystemMonitor.ResumeLayout(false);
+            this.gbFileSystemMonitor.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.olvFoldersToTrack)).EndInit();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -558,6 +588,8 @@ namespace WinChangeMonitor
         private BrightIdeasSoftware.OLVColumn olvcKey;
         private BrightIdeasSoftware.OLVColumn olvcIncludeSubKeys;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
+        private System.Windows.Forms.Button bDefaultTrackedFolders;
+        private System.Windows.Forms.Button bDefaultTrackedKeys;
     }
 }
 

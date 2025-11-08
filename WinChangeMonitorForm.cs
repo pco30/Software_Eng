@@ -4,10 +4,13 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Security;
 using System.ServiceProcess;
+using System.Text;
 using System.Windows.Forms;
 
 namespace WinChangeMonitor
@@ -37,11 +40,11 @@ namespace WinChangeMonitor
 
         public Boolean ConfirmOnClose { get; set; } = true;
 
-        private static String HKCR = "HKEY_CLASSES_ROOT";
-        private static String HKCU = "HKEY_CURRENT_USER";
-        private static String HKLM = "HKEY_LOCAL_MACHINE";
-        private static String HKU = "HKEY_USERS";
-        private static String HKCC = "HKEY_CURRENT_CONFIG";
+        private const String HKCR = "HKEY_CLASSES_ROOT";
+        private const String HKCU = "HKEY_CURRENT_USER";
+        private const String HKLM = "HKEY_LOCAL_MACHINE";
+        private const String HKU = "HKEY_USERS";
+        private const String HKCC = "HKEY_CURRENT_CONFIG";
 
         private static Color ToggleSwitchOnColor = Color.Green;
 
@@ -119,8 +122,8 @@ namespace WinChangeMonitor
                 {
                     this.bPreInstall.Enabled = false;
 
-                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
-                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
+                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
+                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                     this.cbServicesMonitor.Enabled = false;
                     this.bPostInstall.Enabled = this.bStartFresh.Enabled = false;
 
@@ -270,11 +273,21 @@ namespace WinChangeMonitor
                     key = RegistryKey.OpenBaseKey(RegistryHive.CurrentConfig, RegistryView.Registry64);
                 }
 
+                if (key == null)
+                {
+                    return null;
+                }
+
                 String[] split = keyPath.Split('\\');
 
                 for (Int32 i = 1; i < split.Length; ++i)
                 {
                     key = key.OpenSubKey(split[i]);
+
+                    if (key == null)
+                    {
+                        return null;
+                    }
                 }
                 
                 return key;
@@ -298,6 +311,16 @@ namespace WinChangeMonitor
                 if (this.cbRegistryMonitor.Checked && RetainedSettings.KeysToTrack.Count == 0)
                 {
                     Utilities.ToggleSwitchSetChecked(this.cbRegistryMonitor, false);
+                }
+
+                if (this.cbFileSystemMonitor.Checked)
+                {
+                    SaveTrackedFoldersToConfig();
+                }
+
+                if (this.cbRegistryMonitor.Checked)
+                {
+                    SaveTrackedKeysToConfig();
                 }
 
                 Utilities.TextBoxClear(this.tbOutput);
@@ -563,8 +586,8 @@ namespace WinChangeMonitor
 
                     RetainedSettings.DeleteServicesSettings();
 
-                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
-                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
+                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled =  this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
+                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
                     this.cbServicesMonitor.Enabled = true;
 
                     this.bPreInstall.Enabled = true;
@@ -596,6 +619,7 @@ namespace WinChangeMonitor
 
                     this.olvFoldersToTrack.DeselectAll();
                     this.olvFoldersToTrack.Items[this.olvFoldersToTrack.Items.Count - 1].Selected = true;
+                    this.olvFoldersToTrack.Focus();
                 }
             }
             catch (Exception ex)
@@ -1210,11 +1234,246 @@ namespace WinChangeMonitor
             }
         }
 
-        private void olvKeysToTrack_EnabledChanged(object sender, EventArgs e)
+        private void olvKeysToTrack_EnabledChanged(Object sender, EventArgs e)
         {
             try
             {
                 this.olvKeysToTrack.SelectedItems.Clear();
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void LoadTrackedFoldersFromConfig(String settingName)
+        {
+            try
+            {
+                Boolean valid = false;
+
+                try
+                {
+                    String trackedFolders = ConfigurationManager.AppSettings[settingName];
+                    if (trackedFolders != null)
+                    {
+                        String[] folderPairs = trackedFolders.Split('|');
+
+                        RetainedSettings.FoldersToTrack.Clear();
+
+                        foreach (String folderPair in folderPairs)
+                        {
+                            String[] folderIncludeSub = folderPair.Split('?');
+
+                            if ((folderIncludeSub.Length > 0) && !String.IsNullOrWhiteSpace(folderIncludeSub[0]))
+                            {
+                                if (Directory.Exists(folderIncludeSub[0]))
+                                {
+                                    Boolean includeSubFolders = false; // default to false if not present or parsing fails
+
+                                    if (folderIncludeSub.Length > 1)
+                                    {
+                                        try { includeSubFolders = Boolean.Parse(folderIncludeSub[1]); } catch (Exception) { } // if parsing fails, includeSubFolders is already set to false
+                                    }
+
+                                    RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder { Folder = folderIncludeSub[0], IncludeSubFolders = includeSubFolders });
+                                }
+                            }
+                        }
+
+                        valid = true;
+                    }
+                }
+                catch (ConfigurationErrorsException)
+                {
+                    valid = false;
+                }
+
+                if (!valid) // handle the cases with incorrectly formatted App.config or AppSettings[settingName] == null
+                {
+                    RetainedSettings.FoldersToTrack.Clear();
+
+                    // handle the case where user incorrectly modified App.config
+                    RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder { Folder = @"C:\", IncludeSubFolders = true });
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void UpdateAppSetting(String settingName, String value)
+        {
+            try
+            {
+                Configuration configuration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+
+                AppSettingsSection appSettings = configuration.GetSection("appSettings") as AppSettingsSection;
+
+                if (appSettings == null) // this should never be null, but check to be safe
+                {
+                    appSettings = new AppSettingsSection();
+                    configuration.Sections.Add("appSettings", appSettings);
+                }
+
+                if (appSettings.Settings[settingName] != null)
+                {
+                    appSettings.Settings[settingName].Value = value; // update the existing value
+                }
+                else
+                {
+                    appSettings.Settings.Add(settingName, value); // add the new setting with given value
+                }
+
+                configuration.Save(ConfigurationSaveMode.Modified);
+
+                ConfigurationManager.RefreshSection("appSettings");
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void SaveTrackedFoldersToConfig(String settingName = "lastTrackedFolders")
+        {
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+
+                for (int i = 0; i < RetainedSettings.FoldersToTrack.Count; ++i)
+                {
+                    sb.Append($"{RetainedSettings.FoldersToTrack[i].Folder}?{RetainedSettings.FoldersToTrack[i].IncludeSubFolders}");
+
+                    // if it isn't the last tracked folder, append '|' as delimiter
+                    if (i < RetainedSettings.FoldersToTrack.Count - 1)
+                    {
+                        sb.Append("|");
+                    }
+                }
+
+                UpdateAppSetting(settingName, sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void LoadTrackedKeysFromConfig(String settingName)
+        {
+            try
+            {
+                Boolean valid = false;
+
+                try
+                {
+                    String trackedKeys = ConfigurationManager.AppSettings[settingName];
+                    if (trackedKeys != null)
+                    {
+                        String[] keyPairs = trackedKeys.Split('|');
+
+                        RetainedSettings.KeysToTrack.Clear();
+
+                        foreach (String keyPair in keyPairs)
+                        {
+                            String[] keyIncludeSub = keyPair.Split('?');
+
+                            if (keyIncludeSub.Length > 0)
+                            {
+                                if (OpenRegistryKey(keyIncludeSub[0]) != null)
+                                {
+                                    Boolean includeSubKeys = false; // default to false if not present or parsing fails
+
+                                    if (keyIncludeSub.Length > 1)
+                                    {
+                                        try { includeSubKeys = Boolean.Parse(keyIncludeSub[1]); } catch (Exception) { } // if parsing fails, includeSubKeys is already set to false
+                                    }
+
+                                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = keyIncludeSub[0], IncludeSubKeys = includeSubKeys });
+                                }
+                            }
+                        }
+
+                        valid = true;
+                    }
+                }
+                catch (ConfigurationErrorsException)
+                {
+                    valid = false;
+                }
+                
+                if (!valid)
+                {
+                    RetainedSettings.KeysToTrack.Clear();
+
+                    // handle the cases with incorrectly formatted App.config or AppSettings[settingName] == null
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCR, IncludeSubKeys = true });
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCU, IncludeSubKeys = true });
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKLM, IncludeSubKeys = true });
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKU, IncludeSubKeys = true });
+                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCC, IncludeSubKeys = true });
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void SaveTrackedKeysToConfig(String settingName = "lastTrackedKeys")
+        {
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+
+                for (int i = 0; i < RetainedSettings.KeysToTrack.Count; ++i)
+                {
+                    sb.Append($"{RetainedSettings.KeysToTrack[i].Key}?{RetainedSettings.KeysToTrack[i].IncludeSubKeys}");
+
+                    // if it isn't the last tracked folder, append '|' as delimiter
+                    if (i < RetainedSettings.KeysToTrack.Count - 1)
+                    {
+                        sb.Append("|");
+                    }
+                }
+
+                UpdateAppSetting(settingName, sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void bDefaultTrackedFolders_Click(Object sender, EventArgs e)
+        {
+            try
+            {
+                if (MessageBox.Show("Delete current File System Monitor settings and use defaults instead?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                {
+                    LoadTrackedFoldersFromConfig("defaultTrackedFolders");
+                    this.olvFoldersToTrack.ClearObjects();
+                    this.olvFoldersToTrack.AddObjects(RetainedSettings.FoldersToTrack);
+                }
+            }
+            catch(Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void bDefaultTrackedKeys_Click(Object sender, EventArgs e)
+        {
+            try
+            {
+                if (MessageBox.Show("Delete current Registry Monitor settings and use defaults instead?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                {
+                    LoadTrackedKeysFromConfig("defaultTrackedKeys");
+                    this.olvKeysToTrack.ClearObjects();
+                    this.olvKeysToTrack.AddObjects(RetainedSettings.KeysToTrack);
+                }
             }
             catch (Exception ex)
             {
@@ -1243,6 +1502,7 @@ namespace WinChangeMonitor
                 Utilities.HandleException(ex);
             }
         }
+
         private void bwLoader_RunWorkerCompleted(Object sender, RunWorkerCompletedEventArgs e)
         {
             try
@@ -1260,13 +1520,8 @@ namespace WinChangeMonitor
 
                 if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
                 {
-                    RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder { Folder = @"C:\", IncludeSubFolders = true });
-
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCR, IncludeSubKeys = true });
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCU, IncludeSubKeys = true });
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKLM, IncludeSubKeys = true });
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKU, IncludeSubKeys = true });
-                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCC, IncludeSubKeys = true });
+                    LoadTrackedFoldersFromConfig("lastTrackedFolders");
+                    LoadTrackedKeysFromConfig("lastTrackedKeys");
 
                     this.cbFileSystemMonitor.Checked = true;
                     this.olvFoldersToTrack.Visible = this.bAddFolder.Visible = this.bRemoveFolder.Visible = true;
