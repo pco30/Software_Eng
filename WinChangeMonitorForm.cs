@@ -1480,6 +1480,125 @@ namespace WinChangeMonitor
                 Utilities.HandleException(ex);
             }
         }
+        private void ExportRetainedSettingsToHtml(string htmlPath)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(htmlPath));
+
+                using (StreamWriter writer = new StreamWriter(htmlPath, false, Encoding.UTF8))
+                {
+                    writer.WriteLine("<!DOCTYPE html>");
+                    writer.WriteLine("<html>");
+                    writer.WriteLine("<head>");
+                    writer.WriteLine("<meta charset=\"UTF-8\">");
+                    writer.WriteLine("<title>WinChangeMonitor Retained Settings Report</title>");
+                    writer.WriteLine("<style>");
+                    writer.WriteLine("body { font-family: Arial; background-color: #f4f4f4; padding: 20px; }");
+                    writer.WriteLine("h2 { color: #333; border-bottom: 2px solid #ccc; padding-bottom: 5px; }");
+                    writer.WriteLine("table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }");
+                    writer.WriteLine("th, td { border: 1px solid #999; padding: 6px; text-align: left; }");
+                    writer.WriteLine("th { background-color: #ddd; }");
+                    writer.WriteLine("</style>");
+                    writer.WriteLine("</head>");
+                    writer.WriteLine("<body>");
+                    writer.WriteLine("<h1>WinChangeMonitor - Retained Settings Inventory</h1>");
+
+                    // --- FILE SYSTEM INVENTORY ---
+                    writer.WriteLine("<h2>File System Inventory</h2>");
+                    writer.WriteLine("<table>");
+                    writer.WriteLine("<tr><th>#</th><th>Path</th><th>Is Folder</th></tr>");
+                    int count = 0;
+                    foreach (var kvp in RetainedSettings.FileSystemInventory)
+                    {
+                        count++;
+                        writer.WriteLine($"<tr><td>{count}</td><td>{System.Net.WebUtility.HtmlEncode(kvp.Key)}</td><td>{kvp.Value?.IsFolder}</td></tr>");
+                    }
+                    writer.WriteLine("</table>");
+                    writer.WriteLine($"<p><b>Total:</b> {RetainedSettings.FileSystemInventory.Count:N0} entries</p>");
+
+                    // --- REGISTRY INVENTORY ---
+                    writer.WriteLine("<h2>Registry Inventory</h2>");
+                    writer.WriteLine("<table>");
+                    writer.WriteLine("<tr><th>#</th><th>Key Path</th><th>Kind</th><th>Value</th></tr>");
+                    count = 0;
+                    foreach (var kvp in RetainedSettings.RegistryInventory)
+                    {
+                        count++;
+                        string kind = kvp.Value?.Kind.ToString() ?? "Subkey";
+                        string val = kvp.Value?.Value ?? "";
+                        writer.WriteLine($"<tr><td>{count}</td><td>{System.Net.WebUtility.HtmlEncode(kvp.Key)}</td><td>{System.Net.WebUtility.HtmlEncode(kind)}</td><td>{System.Net.WebUtility.HtmlEncode(val)}</td></tr>");
+                    }
+                    writer.WriteLine("</table>");
+                    writer.WriteLine($"<p><b>Total:</b> {RetainedSettings.RegistryInventory.Count:N0} entries</p>");
+
+                    // --- SERVICES INVENTORY ---
+                    writer.WriteLine("<h2>Services Inventory</h2>");
+                    writer.WriteLine("<table>");
+                    writer.WriteLine("<tr><th>#</th><th>Service Name</th><th>Display Name</th><th>Can Stop</th><th>Start Type</th></tr>");
+                    count = 0;
+                    foreach (var kvp in RetainedSettings.ServicesInventory)
+                    {
+                        count++;
+                        var svc = kvp.Value;
+                        writer.WriteLine($"<tr><td>{count}</td><td>{System.Net.WebUtility.HtmlEncode(kvp.Key)}</td><td>{System.Net.WebUtility.HtmlEncode(svc.DisplayName)}</td><td>{svc.CanStop}</td><td>{svc.StartType}</td></tr>");
+                    }
+                    writer.WriteLine("</table>");
+                    writer.WriteLine($"<p><b>Total:</b> {RetainedSettings.ServicesInventory.Count:N0} entries</p>");
+
+                    writer.WriteLine("</body>");
+                    writer.WriteLine("</html>");
+                }
+
+                MessageBox.Show($"HTML report exported successfully!\n\nPath: {htmlPath}", "Export Complete",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string path = tbHtmlPath.Text.Trim();
+
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    MessageBox.Show("Please enter a valid file path for the HTML export.", "Invalid Path",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                ExportRetainedSettingsToHtml(path);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                using (SaveFileDialog sfd = new SaveFileDialog())
+                {
+                    sfd.Filter = "HTML Files (*.html)|*.html|All Files (*.*)|*.*";
+                    sfd.FileName = "WinChangeMonitor_Report.html";
+                    if (sfd.ShowDialog() == DialogResult.OK)
+                    {
+                        tbHtmlPath.Text = sfd.FileName;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
 
         private void tStatus_Tick(Object sender, EventArgs e)
         {
