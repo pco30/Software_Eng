@@ -51,6 +51,10 @@ namespace WinChangeMonitor
 
                     this.Text = this.Owner.Text;
                 }
+                // Show message when splash screen is starts loading
+                lTitle.Text = "System Analyzer Loading...";
+                lStatus.Text = "Loading from disk...";
+                lStatus.Refresh();
             }
             catch (Exception ex)
             {
@@ -114,6 +118,26 @@ namespace WinChangeMonitor
             {
                 Utilities.HandleException(ex);
             }
+        }
+
+        private void lStatus_Click(object sender, EventArgs e)
+        {
+            lStatus.Text = "Loading from  disk...";
+        }
+
+        private void lTitle_Click(object sender, EventArgs e)
+        {
+            lTitle.Text = "WinChangeMonitor is starting...";
+        }
+
+        private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+
+        }
+
+        private void backgroundWorker1_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
+        {
+
         }
 
         private void tReportStatus_Tick(Object sender, EventArgs e)

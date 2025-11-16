@@ -67,6 +67,10 @@ namespace WinChangeMonitor
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.tsslStatus = new System.Windows.Forms.ToolStripStatusLabel();
+            this.label1 = new System.Windows.Forms.Label();
+            this.tbHtmlPath = new System.Windows.Forms.TextBox();
+            this.button1 = new System.Windows.Forms.Button();
+            this.button2 = new System.Windows.Forms.Button();
             this.gbRegistryMonitor.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.olvKeysToTrack)).BeginInit();
             this.gbServicesMonitor.SuspendLayout();
@@ -78,9 +82,9 @@ namespace WinChangeMonitor
             // 
             // bPreInstall
             // 
-            this.bPreInstall.Location = new System.Drawing.Point(12, 467);
+            this.bPreInstall.Location = new System.Drawing.Point(12, 431);
             this.bPreInstall.Name = "bPreInstall";
-            this.bPreInstall.Size = new System.Drawing.Size(102, 23);
+            this.bPreInstall.Size = new System.Drawing.Size(102, 21);
             this.bPreInstall.TabIndex = 1;
             this.bPreInstall.Text = "Perform Pre-Install";
             this.bPreInstall.UseVisualStyleBackColor = true;
@@ -97,20 +101,20 @@ namespace WinChangeMonitor
             this.tbOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbOutput.Location = new System.Drawing.Point(12, 496);
+            this.tbOutput.Location = new System.Drawing.Point(12, 458);
             this.tbOutput.Multiline = true;
             this.tbOutput.Name = "tbOutput";
             this.tbOutput.ReadOnly = true;
             this.tbOutput.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.tbOutput.Size = new System.Drawing.Size(767, 182);
+            this.tbOutput.Size = new System.Drawing.Size(767, 124);
             this.tbOutput.TabIndex = 2;
             // 
             // bPostInstall
             // 
             this.bPostInstall.Enabled = false;
-            this.bPostInstall.Location = new System.Drawing.Point(120, 467);
+            this.bPostInstall.Location = new System.Drawing.Point(120, 431);
             this.bPostInstall.Name = "bPostInstall";
-            this.bPostInstall.Size = new System.Drawing.Size(107, 23);
+            this.bPostInstall.Size = new System.Drawing.Size(107, 21);
             this.bPostInstall.TabIndex = 3;
             this.bPostInstall.Text = "Perform Post-Install";
             this.bPostInstall.UseVisualStyleBackColor = true;
@@ -125,9 +129,9 @@ namespace WinChangeMonitor
             this.gbRegistryMonitor.Controls.Add(this.bAddKey);
             this.gbRegistryMonitor.Controls.Add(this.bRemoveKey);
             this.gbRegistryMonitor.Controls.Add(this.cbRegistryMonitor);
-            this.gbRegistryMonitor.Location = new System.Drawing.Point(12, 220);
+            this.gbRegistryMonitor.Location = new System.Drawing.Point(12, 203);
             this.gbRegistryMonitor.Name = "gbRegistryMonitor";
-            this.gbRegistryMonitor.Size = new System.Drawing.Size(767, 187);
+            this.gbRegistryMonitor.Size = new System.Drawing.Size(767, 173);
             this.gbRegistryMonitor.TabIndex = 6;
             this.gbRegistryMonitor.TabStop = false;
             this.gbRegistryMonitor.Text = "Registry Monitor";
@@ -136,9 +140,9 @@ namespace WinChangeMonitor
             // 
             this.bDefaultTrackedKeys.AutoSize = true;
             this.bDefaultTrackedKeys.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.bDefaultTrackedKeys.Location = new System.Drawing.Point(77, 158);
+            this.bDefaultTrackedKeys.Location = new System.Drawing.Point(77, 146);
             this.bDefaultTrackedKeys.Name = "bDefaultTrackedKeys";
-            this.bDefaultTrackedKeys.Size = new System.Drawing.Size(78, 23);
+            this.bDefaultTrackedKeys.Size = new System.Drawing.Size(87, 22);
             this.bDefaultTrackedKeys.TabIndex = 12;
             this.bDefaultTrackedKeys.Text = "Use Defaults";
             this.bDefaultTrackedKeys.UseVisualStyleBackColor = true;
@@ -163,7 +167,7 @@ namespace WinChangeMonitor
             this.olvKeysToTrack.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.olvKeysToTrack.HideSelection = false;
             this.olvKeysToTrack.IsSearchOnSortColumn = false;
-            this.olvKeysToTrack.Location = new System.Drawing.Point(77, 19);
+            this.olvKeysToTrack.Location = new System.Drawing.Point(77, 18);
             this.olvKeysToTrack.MultiSelect = false;
             this.olvKeysToTrack.Name = "olvKeysToTrack";
             this.olvKeysToTrack.SelectAllOnControlA = false;
@@ -174,7 +178,7 @@ namespace WinChangeMonitor
             this.olvKeysToTrack.ShowFilterMenuOnRightClick = false;
             this.olvKeysToTrack.ShowGroups = false;
             this.olvKeysToTrack.ShowSortIndicators = false;
-            this.olvKeysToTrack.Size = new System.Drawing.Size(684, 133);
+            this.olvKeysToTrack.Size = new System.Drawing.Size(684, 123);
             this.olvKeysToTrack.SortGroupItemsByPrimaryColumn = false;
             this.olvKeysToTrack.TabIndex = 11;
             this.olvKeysToTrack.UnfocusedSelectedBackColor = System.Drawing.SystemColors.Highlight;
@@ -219,9 +223,9 @@ namespace WinChangeMonitor
             // bAddKey
             // 
             this.bAddKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.bAddKey.Location = new System.Drawing.Point(641, 158);
+            this.bAddKey.Location = new System.Drawing.Point(641, 146);
             this.bAddKey.Name = "bAddKey";
-            this.bAddKey.Size = new System.Drawing.Size(57, 23);
+            this.bAddKey.Size = new System.Drawing.Size(57, 21);
             this.bAddKey.TabIndex = 10;
             this.bAddKey.Text = "Add";
             this.bAddKey.UseVisualStyleBackColor = true;
@@ -231,9 +235,9 @@ namespace WinChangeMonitor
             // 
             this.bRemoveKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.bRemoveKey.Enabled = false;
-            this.bRemoveKey.Location = new System.Drawing.Point(704, 158);
+            this.bRemoveKey.Location = new System.Drawing.Point(704, 146);
             this.bRemoveKey.Name = "bRemoveKey";
-            this.bRemoveKey.Size = new System.Drawing.Size(57, 23);
+            this.bRemoveKey.Size = new System.Drawing.Size(57, 21);
             this.bRemoveKey.TabIndex = 10;
             this.bRemoveKey.Text = "Remove";
             this.bRemoveKey.UseVisualStyleBackColor = true;
@@ -242,13 +246,13 @@ namespace WinChangeMonitor
             // cbRegistryMonitor
             // 
             this.cbRegistryMonitor.Checked = true;
-            this.cbRegistryMonitor.Location = new System.Drawing.Point(6, 23);
+            this.cbRegistryMonitor.Location = new System.Drawing.Point(6, 21);
             this.cbRegistryMonitor.Name = "cbRegistryMonitor";
             this.cbRegistryMonitor.OffFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cbRegistryMonitor.OffText = "OFF";
             this.cbRegistryMonitor.OnFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cbRegistryMonitor.OnText = "ON";
-            this.cbRegistryMonitor.Size = new System.Drawing.Size(65, 23);
+            this.cbRegistryMonitor.Size = new System.Drawing.Size(65, 21);
             this.cbRegistryMonitor.Style = JCS.ToggleSwitch.ToggleSwitchStyle.Iphone;
             this.cbRegistryMonitor.TabIndex = 5;
             this.cbRegistryMonitor.CheckedChanged += new JCS.ToggleSwitch.CheckedChangedDelegate(this.cbRegistryMonitor_CheckedChanged);
@@ -258,9 +262,9 @@ namespace WinChangeMonitor
             this.gbServicesMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbServicesMonitor.Controls.Add(this.cbServicesMonitor);
-            this.gbServicesMonitor.Location = new System.Drawing.Point(12, 413);
+            this.gbServicesMonitor.Location = new System.Drawing.Point(12, 381);
             this.gbServicesMonitor.Name = "gbServicesMonitor";
-            this.gbServicesMonitor.Size = new System.Drawing.Size(767, 48);
+            this.gbServicesMonitor.Size = new System.Drawing.Size(767, 44);
             this.gbServicesMonitor.TabIndex = 7;
             this.gbServicesMonitor.TabStop = false;
             this.gbServicesMonitor.Text = "Services Monitor";
@@ -268,13 +272,13 @@ namespace WinChangeMonitor
             // cbServicesMonitor
             // 
             this.cbServicesMonitor.Checked = true;
-            this.cbServicesMonitor.Location = new System.Drawing.Point(6, 19);
+            this.cbServicesMonitor.Location = new System.Drawing.Point(6, 18);
             this.cbServicesMonitor.Name = "cbServicesMonitor";
             this.cbServicesMonitor.OffFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cbServicesMonitor.OffText = "OFF";
             this.cbServicesMonitor.OnFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cbServicesMonitor.OnText = "ON";
-            this.cbServicesMonitor.Size = new System.Drawing.Size(65, 23);
+            this.cbServicesMonitor.Size = new System.Drawing.Size(65, 21);
             this.cbServicesMonitor.Style = JCS.ToggleSwitch.ToggleSwitchStyle.Iphone;
             this.cbServicesMonitor.TabIndex = 5;
             this.cbServicesMonitor.CheckedChanged += new JCS.ToggleSwitch.CheckedChangedDelegate(this.cbServicesMonitor_CheckedChanged);
@@ -282,13 +286,13 @@ namespace WinChangeMonitor
             // cbFileSystemMonitor
             // 
             this.cbFileSystemMonitor.Checked = true;
-            this.cbFileSystemMonitor.Location = new System.Drawing.Point(6, 23);
+            this.cbFileSystemMonitor.Location = new System.Drawing.Point(6, 21);
             this.cbFileSystemMonitor.Name = "cbFileSystemMonitor";
             this.cbFileSystemMonitor.OffFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cbFileSystemMonitor.OffText = "OFF";
             this.cbFileSystemMonitor.OnFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cbFileSystemMonitor.OnText = "ON";
-            this.cbFileSystemMonitor.Size = new System.Drawing.Size(65, 23);
+            this.cbFileSystemMonitor.Size = new System.Drawing.Size(65, 21);
             this.cbFileSystemMonitor.Style = JCS.ToggleSwitch.ToggleSwitchStyle.Iphone;
             this.cbFileSystemMonitor.TabIndex = 5;
             this.cbFileSystemMonitor.CheckedChanged += new JCS.ToggleSwitch.CheckedChangedDelegate(this.cbFileSystemMonitor_CheckedChanged);
@@ -297,9 +301,9 @@ namespace WinChangeMonitor
             // 
             this.bRemoveFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.bRemoveFolder.Enabled = false;
-            this.bRemoveFolder.Location = new System.Drawing.Point(704, 158);
+            this.bRemoveFolder.Location = new System.Drawing.Point(704, 146);
             this.bRemoveFolder.Name = "bRemoveFolder";
-            this.bRemoveFolder.Size = new System.Drawing.Size(57, 23);
+            this.bRemoveFolder.Size = new System.Drawing.Size(57, 21);
             this.bRemoveFolder.TabIndex = 8;
             this.bRemoveFolder.Text = "Remove";
             this.bRemoveFolder.UseVisualStyleBackColor = true;
@@ -308,9 +312,9 @@ namespace WinChangeMonitor
             // bAddFolder
             // 
             this.bAddFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.bAddFolder.Location = new System.Drawing.Point(641, 158);
+            this.bAddFolder.Location = new System.Drawing.Point(641, 146);
             this.bAddFolder.Name = "bAddFolder";
-            this.bAddFolder.Size = new System.Drawing.Size(57, 23);
+            this.bAddFolder.Size = new System.Drawing.Size(57, 21);
             this.bAddFolder.TabIndex = 9;
             this.bAddFolder.Text = "Add";
             this.bAddFolder.UseVisualStyleBackColor = true;
@@ -325,9 +329,9 @@ namespace WinChangeMonitor
             this.gbFileSystemMonitor.Controls.Add(this.bAddFolder);
             this.gbFileSystemMonitor.Controls.Add(this.bRemoveFolder);
             this.gbFileSystemMonitor.Controls.Add(this.cbFileSystemMonitor);
-            this.gbFileSystemMonitor.Location = new System.Drawing.Point(12, 27);
+            this.gbFileSystemMonitor.Location = new System.Drawing.Point(12, 25);
             this.gbFileSystemMonitor.Name = "gbFileSystemMonitor";
-            this.gbFileSystemMonitor.Size = new System.Drawing.Size(767, 187);
+            this.gbFileSystemMonitor.Size = new System.Drawing.Size(767, 173);
             this.gbFileSystemMonitor.TabIndex = 0;
             this.gbFileSystemMonitor.TabStop = false;
             this.gbFileSystemMonitor.Text = "File System Monitor";
@@ -336,9 +340,9 @@ namespace WinChangeMonitor
             // 
             this.bDefaultTrackedFolders.AutoSize = true;
             this.bDefaultTrackedFolders.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.bDefaultTrackedFolders.Location = new System.Drawing.Point(77, 158);
+            this.bDefaultTrackedFolders.Location = new System.Drawing.Point(77, 146);
             this.bDefaultTrackedFolders.Name = "bDefaultTrackedFolders";
-            this.bDefaultTrackedFolders.Size = new System.Drawing.Size(78, 23);
+            this.bDefaultTrackedFolders.Size = new System.Drawing.Size(87, 22);
             this.bDefaultTrackedFolders.TabIndex = 11;
             this.bDefaultTrackedFolders.Text = "Use Defaults";
             this.bDefaultTrackedFolders.UseVisualStyleBackColor = true;
@@ -363,7 +367,7 @@ namespace WinChangeMonitor
             this.olvFoldersToTrack.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.olvFoldersToTrack.HideSelection = false;
             this.olvFoldersToTrack.IsSearchOnSortColumn = false;
-            this.olvFoldersToTrack.Location = new System.Drawing.Point(77, 19);
+            this.olvFoldersToTrack.Location = new System.Drawing.Point(77, 18);
             this.olvFoldersToTrack.MultiSelect = false;
             this.olvFoldersToTrack.Name = "olvFoldersToTrack";
             this.olvFoldersToTrack.SelectAllOnControlA = false;
@@ -374,7 +378,7 @@ namespace WinChangeMonitor
             this.olvFoldersToTrack.ShowFilterMenuOnRightClick = false;
             this.olvFoldersToTrack.ShowGroups = false;
             this.olvFoldersToTrack.ShowSortIndicators = false;
-            this.olvFoldersToTrack.Size = new System.Drawing.Size(684, 133);
+            this.olvFoldersToTrack.Size = new System.Drawing.Size(684, 123);
             this.olvFoldersToTrack.SortGroupItemsByPrimaryColumn = false;
             this.olvFoldersToTrack.TabIndex = 10;
             this.olvFoldersToTrack.UnfocusedSelectedBackColor = System.Drawing.SystemColors.Highlight;
@@ -421,9 +425,9 @@ namespace WinChangeMonitor
             // 
             this.bStartFresh.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.bStartFresh.Enabled = false;
-            this.bStartFresh.Location = new System.Drawing.Point(672, 467);
+            this.bStartFresh.Location = new System.Drawing.Point(672, 431);
             this.bStartFresh.Name = "bStartFresh";
-            this.bStartFresh.Size = new System.Drawing.Size(107, 23);
+            this.bStartFresh.Size = new System.Drawing.Size(107, 21);
             this.bStartFresh.TabIndex = 8;
             this.bStartFresh.Text = "Start Fresh";
             this.bStartFresh.UseVisualStyleBackColor = true;
@@ -503,7 +507,7 @@ namespace WinChangeMonitor
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsslStatus});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 681);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 691);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(791, 22);
             this.statusStrip1.TabIndex = 10;
@@ -515,11 +519,51 @@ namespace WinChangeMonitor
             this.tsslStatus.Size = new System.Drawing.Size(231, 17);
             this.tsslStatus.Text = "Current Folder/Key/Service Displayed Here";
             // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(16, 598);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(59, 12);
+            this.label1.TabIndex = 11;
+            this.label1.Text = "Save to: ";
+            // 
+            // tbHtmlPath
+            // 
+            this.tbHtmlPath.Location = new System.Drawing.Point(89, 589);
+            this.tbHtmlPath.Name = "tbHtmlPath";
+            this.tbHtmlPath.Size = new System.Drawing.Size(684, 21);
+            this.tbHtmlPath.TabIndex = 12;
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(698, 644);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 13;
+            this.button1.Text = "Export";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(617, 644);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(75, 23);
+            this.button2.TabIndex = 14;
+            this.button2.Text = "Browse";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
             // WinChangeMonitorForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(791, 703);
+            this.ClientSize = new System.Drawing.Size(791, 713);
+            this.Controls.Add(this.button2);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.tbHtmlPath);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.bStartFresh);
             this.Controls.Add(this.gbServicesMonitor);
@@ -590,6 +634,10 @@ namespace WinChangeMonitor
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
         private System.Windows.Forms.Button bDefaultTrackedFolders;
         private System.Windows.Forms.Button bDefaultTrackedKeys;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.TextBox tbHtmlPath;
+        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button button2;
     }
 }
 

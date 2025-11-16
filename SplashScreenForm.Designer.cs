@@ -31,23 +31,18 @@ namespace WinChangeMonitor
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.lTitle = new System.Windows.Forms.Label();
+            BrightIdeasSoftware.CellStyle cellStyle1 = new BrightIdeasSoftware.CellStyle();
+            BrightIdeasSoftware.CellStyle cellStyle2 = new BrightIdeasSoftware.CellStyle();
+            BrightIdeasSoftware.CellStyle cellStyle3 = new BrightIdeasSoftware.CellStyle();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SplashScreenForm));
             this.lStatus = new System.Windows.Forms.Label();
             this.tReportStatus = new System.Windows.Forms.Timer(this.components);
+            this.colorDialog1 = new System.Windows.Forms.ColorDialog();
+            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            this.fontDialog1 = new System.Windows.Forms.FontDialog();
+            this.hyperlinkStyle1 = new BrightIdeasSoftware.HyperlinkStyle();
+            this.lTitle = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            // 
-            // lTitle
-            // 
-            this.lTitle.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lTitle.Font = new System.Drawing.Font("Calibri", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lTitle.Location = new System.Drawing.Point(0, 0);
-            this.lTitle.Name = "lTitle";
-            this.lTitle.Size = new System.Drawing.Size(800, 425);
-            this.lTitle.TabIndex = 0;
-            this.lTitle.Text = "WinChangeMonitor";
-            this.lTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // lStatus
             // 
@@ -59,12 +54,46 @@ namespace WinChangeMonitor
             this.lStatus.TabIndex = 1;
             this.lStatus.Text = "Status Message";
             this.lStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.lStatus.Click += new System.EventHandler(this.lStatus_Click);
             // 
             // tReportStatus
             // 
             this.tReportStatus.Enabled = true;
             this.tReportStatus.Interval = 1000;
             this.tReportStatus.Tick += new System.EventHandler(this.tReportStatus_Tick);
+            // 
+            // fontDialog1
+            // 
+            this.fontDialog1.MaxSize = 12;
+            this.fontDialog1.ShowApply = true;
+            this.fontDialog1.ShowColor = true;
+            // 
+            // hyperlinkStyle1
+            // 
+            cellStyle1.Font = null;
+            cellStyle1.ForeColor = System.Drawing.Color.Blue;
+            this.hyperlinkStyle1.Normal = cellStyle1;
+            cellStyle2.Font = null;
+            cellStyle2.FontStyle = System.Drawing.FontStyle.Underline;
+            this.hyperlinkStyle1.Over = cellStyle2;
+            this.hyperlinkStyle1.OverCursor = System.Windows.Forms.Cursors.Hand;
+            cellStyle3.Font = null;
+            cellStyle3.ForeColor = System.Drawing.Color.Purple;
+            this.hyperlinkStyle1.Visited = cellStyle3;
+            // 
+            // lTitle
+            // 
+            this.lTitle.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lTitle.Font = new System.Drawing.Font("Calibri", 20.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lTitle.Image = ((System.Drawing.Image)(resources.GetObject("lTitle.Image")));
+            this.lTitle.Location = new System.Drawing.Point(0, 0);
+            this.lTitle.Name = "lTitle";
+            this.lTitle.Size = new System.Drawing.Size(800, 425);
+            this.lTitle.TabIndex = 0;
+            this.lTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lTitle.Click += new System.EventHandler(this.lTitle_Click);
             // 
             // SplashScreenForm
             // 
@@ -79,7 +108,7 @@ namespace WinChangeMonitor
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "SplashScreenForm";
+            this.Text = "WinChangeMonitor";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SplashScreenForm_FormClosing);
             this.Load += new System.EventHandler(this.SplashScreenForm_Load);
             this.Move += new System.EventHandler(this.SplashScreenForm_Move);
@@ -89,9 +118,12 @@ namespace WinChangeMonitor
         }
 
         #endregion
-
-        private System.Windows.Forms.Label lTitle;
         private System.Windows.Forms.Label lStatus;
         private System.Windows.Forms.Timer tReportStatus;
+        private System.Windows.Forms.ColorDialog colorDialog1;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.Windows.Forms.FontDialog fontDialog1;
+        private BrightIdeasSoftware.HyperlinkStyle hyperlinkStyle1;
+        private System.Windows.Forms.Label lTitle;
     }
 }
