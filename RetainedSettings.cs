@@ -246,7 +246,8 @@ namespace WinChangeMonitor
             }
         }
 
-        private static String DirectoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        private static String directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        public static String DirectoryName { get { return directoryName; } }
 
         public static void SaveCommonInfo(String fileName = "_Common.bin")
         {

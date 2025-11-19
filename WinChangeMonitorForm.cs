@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net;
@@ -36,6 +37,7 @@ namespace WinChangeMonitor
         private DateTime? postInstallServicesStarted = null;
         private DateTime? postInstallServicesFinished = null;
         private String operation, current;
+        private SaveFileDialog sfdSaveReport = new SaveFileDialog();
 
         public static SplashScreenForm SplashScreen { get; private set; }
 
@@ -102,6 +104,12 @@ namespace WinChangeMonitor
 
                 this.fbdAddFolder.ShowNewFolderButton = false;
                 this.fbdAddFolder.RootFolder = Environment.SpecialFolder.MyComputer;
+                
+                this.sfdSaveReport.FileName = "Report.html";
+                this.sfdSaveReport.Filter = "HTML Files (*.htm, *.html)|*.htm;*.html";
+                this.sfdSaveReport.InitialDirectory = RetainedSettings.DirectoryName;
+                this.sfdSaveReport.OverwritePrompt = true;
+                this.sfdSaveReport.ValidateNames = true;
 
                 SplashScreen.Show(this);
 
@@ -401,14 +409,17 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.bPostInstall.Enabled = false;
+                if (this.sfdSaveReport.ShowDialog() == DialogResult.OK)
+                {
+                    this.bPostInstall.Enabled = false;
 
-                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
-                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
-                this.cbServicesMonitor.Enabled = false;
-                this.bPreInstall.Enabled = this.bStartFresh.Enabled = false;
+                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
+                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
+                    this.cbServicesMonitor.Enabled = false;
+                    this.bPreInstall.Enabled = this.bStartFresh.Enabled = false;
 
-                this.bwPostInstall.RunWorkerAsync();
+                    this.bwPostInstall.RunWorkerAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -863,7 +874,9 @@ namespace WinChangeMonitor
                     this.postInstallServicesFinished = DateTime.Now;
                 }
 
-                GenerateIntallationReportHTML("Report.html");
+                GenerateIntallationReportHTML(this.sfdSaveReport.FileName);
+
+                Process.Start(this.sfdSaveReport.FileName);
             }
             catch (Exception ex)
             {
@@ -1342,6 +1355,28 @@ namespace WinChangeMonitor
 
                     if (this.cbFileSystemMonitor.Checked)
                     {
+                        writer.WriteLine("<div><a href=\"#file_system_added\">File System Contents Added</a></div>");
+                        writer.WriteLine("<div><a href=\"#file_system_modified\">File System Contents Modified</a></div>");
+                        writer.WriteLine("<div><a href=\"#file_system_removed\">File System Contents Removed</a></div>");
+                    }
+
+                    if (this.cbRegistryMonitor.Checked)
+                    {
+                        writer.WriteLine("<div><a href=\"#registry_added\">Registry Contents Added</a></div>");
+                        writer.WriteLine("<div><a href=\"#registry_modified\">Registry Contents Modified</a></div>");
+                        writer.WriteLine("<div><a href=\"#registry_removed\">Registry Contents Removed</a></div>");
+                    }
+
+                    if (this.cbServicesMonitor.Checked)
+                    {
+                        writer.WriteLine("<div><a href=\"#services_added\">Services Added</a></div>");
+                        writer.WriteLine("<div><a href=\"#services_modified\">Services Modified</a></div>");
+                        writer.WriteLine("<div><a href=\"#services_removed\">Services Removed</a></div>");
+                    }
+
+
+                    if (this.cbFileSystemMonitor.Checked)
+                    {
                         // --- FILE SYSTEM INVENTORY ---
                         writer.WriteLine("<h2>File System Inventory</h2>");
                         writer.WriteLine("<h4>Tracked Folders</h4>");
@@ -1355,7 +1390,7 @@ namespace WinChangeMonitor
 
                         writer.WriteLine("</table>");
 
-                        writer.WriteLine("<h4>File System Contents Added</h4>");
+                        writer.WriteLine("<h4 id=\"file_system_added\">File System Contents Added</h4>");
 
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
@@ -1379,7 +1414,7 @@ namespace WinChangeMonitor
                         writer.WriteLine("</tr>");
                         writer.WriteLine("</table>");
 
-                        writer.WriteLine("<h4>File System Contents Modified</h4>");
+                        writer.WriteLine("<h4 id=\"file_system_modified\">File System Contents Modified</h4>");
 
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
@@ -1404,7 +1439,7 @@ namespace WinChangeMonitor
                         writer.WriteLine("</tr>");
                         writer.WriteLine("</table>");
 
-                        writer.WriteLine("<h4>File System Contents Removed</h4>");
+                        writer.WriteLine("<h4 id=\"file_system_removed\">File System Contents Removed</h4>");
 
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
@@ -1446,7 +1481,7 @@ namespace WinChangeMonitor
 
                         writer.WriteLine("</table>");
 
-                        writer.WriteLine("<h4>Registry Contents Added</h4>");
+                        writer.WriteLine("<h4 id=\"registry_added\">Registry Contents Added</h4>");
 
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
@@ -1472,7 +1507,7 @@ namespace WinChangeMonitor
                         writer.WriteLine("</tr>");
                         writer.WriteLine("</table>");
 
-                        writer.WriteLine("<h4>Registry Contents Modified</h4>");
+                        writer.WriteLine("<h4 id=\"registry_modified\">Registry Contents Modified</h4>");
 
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
@@ -1498,7 +1533,7 @@ namespace WinChangeMonitor
                         writer.WriteLine("</tr>");
                         writer.WriteLine("</table>");
 
-                        writer.WriteLine("<h4>Registry Contents Removed</h4>");
+                        writer.WriteLine("<h4 id=\"registry_removed\">Registry Contents Removed</h4>");
 
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
@@ -1530,7 +1565,7 @@ namespace WinChangeMonitor
                         // --- SERVICES INVENTORY ---
                         writer.WriteLine("<h2>Services Inventory</h2>");
 
-                        writer.WriteLine("<h4>Services Added</h4>");
+                        writer.WriteLine("<h4 id=\"services_added\">Services Added</h4>");
 
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
@@ -1556,7 +1591,7 @@ namespace WinChangeMonitor
                         writer.WriteLine("</tr>");
                         writer.WriteLine("</table>");
 
-                        writer.WriteLine("<h4>Services Modified</h4>");
+                        writer.WriteLine("<h4 id=\"services_modified\">Services Modified</h4>");
 
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
@@ -1582,7 +1617,7 @@ namespace WinChangeMonitor
                         writer.WriteLine("</tr>");
                         writer.WriteLine("</table>");
 
-                        writer.WriteLine("<h4>Services Removed</h4>");
+                        writer.WriteLine("<h4 id=\"services_removed\">Services Removed</h4>");
 
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
@@ -1613,9 +1648,6 @@ namespace WinChangeMonitor
                     writer.WriteLine("</body>");
                     writer.WriteLine("</html>");
                 }
-
-                MessageBox.Show($"HTML report exported successfully!\n\nPath: {htmlPath}", "Export Complete",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
