@@ -51,9 +51,7 @@ namespace WinChangeMonitor
 
                     this.Text = this.Owner.Text;
                 }
-                // Show message when splash screen is starts loading
-                lTitle.Text = "System Analyzer Loading...";
-                lStatus.Text = "Loading from disk...";
+             
                 lStatus.Refresh();
             }
             catch (Exception ex)
