@@ -23,7 +23,7 @@ namespace WinChangeMonitor
             }
             else
             {
-                MessageBox.Show("Another instance of WinChangeMonitor is already running.", "Multiple Instances Detected", MessageBoxButtons.OK);
+                MessageBox.Show("WinChangeMonitor is already running. Please close it before running another copy.", "Multiple Copies Detected", MessageBoxButtons.OK);
                 Application.Exit();
             }
         }
