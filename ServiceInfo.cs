@@ -22,7 +22,7 @@ namespace WinChangeMonitor
         public String DisplayName { get; set; }
 
         [Key(4)]
-        public List<String> ServiceNamesDependedOn { get; set; }
+        public HashSet<String> ServiceNamesDependedOn { get; set; }
 
         [Key(5)]
         public ServiceType ServiceType { get; set; }
@@ -35,7 +35,7 @@ namespace WinChangeMonitor
 
         public static ServiceInfo Parse(ServiceController service)
         {
-            List<String> serviceNamesDependedOn = new List<String>();
+            HashSet<String> serviceNamesDependedOn = new HashSet<String>();
             foreach (ServiceController serviceDependedOn in service.ServicesDependedOn)
             {
                 serviceNamesDependedOn.Add(serviceDependedOn.ServiceName);
@@ -59,14 +59,17 @@ namespace WinChangeMonitor
             {
                 this.printableNamesDependedOn = new StringBuilder();
 
-                for (Int32 i = 0; i < this.ServiceNamesDependedOn.Count; ++i)
+                Boolean isFirstElement = true;
+
+                foreach (String serviceNameDependedOn in this.ServiceNamesDependedOn)
                 {
-                    if (i > 0)
+                    if (!isFirstElement)
                     {
                         this.printableNamesDependedOn.Append(", ");
                     }
 
-                    this.printableNamesDependedOn.Append(this.ServiceNamesDependedOn[i]);
+                    this.printableNamesDependedOn.Append(serviceNameDependedOn);
+                    isFirstElement = false;
                 }
             }
 

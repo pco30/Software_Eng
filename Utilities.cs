@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net;
+using System.Text;
 using System.Windows.Forms;
 
 namespace WinChangeMonitor
@@ -68,7 +70,7 @@ namespace WinChangeMonitor
             {
                 HandleException(ex);
             }
-        }        
+        }
 
         delegate void TextBoxAppendTextDelegate(TextBox textBox, String text);
         public static void TextBoxAppendText(TextBox textBox, String text)
@@ -107,6 +109,64 @@ namespace WinChangeMonitor
             catch (Exception ex)
             {
                 HandleException(ex);
+            }
+        }
+
+        public static String PrettyString(Object obj)
+        {
+            try
+            {
+                if (obj == null)
+                {
+                    return null;
+                }
+
+                if (obj is Byte[] byteArrayObj)
+                {
+                    return BitConverter.ToString(byteArrayObj);
+                }
+
+                if (obj is String[] stringArrayObj)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    Boolean isFirst = true;
+                    foreach(String s in stringArrayObj)
+                    {
+                        if (isFirst)
+                        {
+                            sb.Append((Char)0);
+                        }
+                        sb.Append(s);
+                        isFirst = true;
+                    }
+                    return sb.ToString();
+                }
+
+                return obj.ToString();
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+                throw;
+            }
+        }
+
+        public static String HandleValueWithZeroDelimiter(String value)
+        {
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+                String[] split = value.Split((Char)0); // handle REG_MULTI_SZ where (Char)0 is the delimiter
+                foreach (String s in split)
+                {
+                    sb.AppendLine($"<div>{WebUtility.HtmlEncode(s)}</div>");
+                }
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+                throw;
             }
         }
     }

@@ -57,7 +57,7 @@ namespace WinChangeMonitor
             this.bwPostInstall = new System.ComponentModel.BackgroundWorker();
             this.bwLoader = new System.ComponentModel.BackgroundWorker();
             this.tStatus = new System.Windows.Forms.Timer(this.components);
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -71,7 +71,7 @@ namespace WinChangeMonitor
             this.gbServicesMonitor.SuspendLayout();
             this.gbFileSystemMonitor.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.olvFoldersToTrack)).BeginInit();
-            this.menuStrip1.SuspendLayout();
+            this.menuStrip.SuspendLayout();
             this.statusBar.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -430,17 +430,17 @@ namespace WinChangeMonitor
             this.tStatus.Interval = 1000;
             this.tStatus.Tick += new System.EventHandler(this.tStatus_Tick);
             // 
-            // menuStrip1
+            // menuStrip
             // 
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
             this.optionsToolStripMenuItem,
             this.helpToolStripMenuItem});
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(791, 24);
-            this.menuStrip1.TabIndex = 9;
-            this.menuStrip1.Text = "menuStrip1";
+            this.menuStrip.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip.Name = "menuStrip";
+            this.menuStrip.Size = new System.Drawing.Size(791, 24);
+            this.menuStrip.TabIndex = 9;
+            this.menuStrip.Text = "menuStrip1";
             // 
             // fileToolStripMenuItem
             // 
@@ -468,7 +468,7 @@ namespace WinChangeMonitor
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             // 
             // helpToolStripMenuItem
@@ -512,8 +512,8 @@ namespace WinChangeMonitor
             this.Controls.Add(this.bPostInstall);
             this.Controls.Add(this.bPreInstall);
             this.Controls.Add(this.gbFileSystemMonitor);
-            this.Controls.Add(this.menuStrip1);
-            this.MainMenuStrip = this.menuStrip1;
+            this.Controls.Add(this.menuStrip);
+            this.MainMenuStrip = this.menuStrip;
             this.Name = "WinChangeMonitorForm";
             this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -528,8 +528,8 @@ namespace WinChangeMonitor
             this.gbFileSystemMonitor.ResumeLayout(false);
             this.gbFileSystemMonitor.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.olvFoldersToTrack)).EndInit();
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
+            this.menuStrip.ResumeLayout(false);
+            this.menuStrip.PerformLayout();
             this.statusBar.ResumeLayout(false);
             this.statusBar.PerformLayout();
             this.ResumeLayout(false);
@@ -556,7 +556,7 @@ namespace WinChangeMonitor
         private System.ComponentModel.BackgroundWorker bwPostInstall;
         private System.ComponentModel.BackgroundWorker bwLoader;
         private System.Windows.Forms.Timer tStatus;
-        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.MenuStrip menuStrip;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;

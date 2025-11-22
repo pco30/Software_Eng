@@ -8,6 +8,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Security;
@@ -19,26 +20,6 @@ namespace WinChangeMonitor
 {
     public partial class WinChangeMonitorForm : Form
     {
-        private DateTime? preInstallFoldersStarted = null;
-        private DateTime? preInstallRegistryStarted = null;
-        private DateTime? preInstallServicesStarted = null;
-        private SortedDictionary<String, Boolean> folderContentsAdded = new SortedDictionary<String, Boolean>();
-        private SortedDictionary<String, Boolean> folderContentsModified = new SortedDictionary<String, Boolean>();
-        private SortedDictionary<String, RegistryEntryInfo> registryContentsAdded = new SortedDictionary<String, RegistryEntryInfo>();
-        private SortedDictionary<String, RegistryEntryDiff> registryContentsModified = new SortedDictionary<String, RegistryEntryDiff>();
-        private SortedDictionary<String, ServiceInfo> servicesAdded = new SortedDictionary<String, ServiceInfo>();
-        private SortedDictionary<String, ServiceDiff> servicesModified = new SortedDictionary<String, ServiceDiff>();
-        private FolderBrowserDialog fbdAddFolder = new FolderBrowserDialog();
-        private RegistryKeyBrowserDialog rkbdAddKey = new RegistryKeyBrowserDialog();
-        private DateTime? postInstallFoldersStarted = null;
-        private DateTime? postInstallFoldersFinished = null;
-        private DateTime? postInstallRegistryStarted = null;
-        private DateTime? postInstallRegistryFinished = null;
-        private DateTime? postInstallServicesStarted = null;
-        private DateTime? postInstallServicesFinished = null;
-        private String operation, current;
-        private SaveFileDialog sfdSaveReport = new SaveFileDialog();
-
         public static SplashScreenForm SplashScreen { get; private set; }
 
         public Boolean ConfirmOnClose { get; set; } = true;
@@ -50,12 +31,43 @@ namespace WinChangeMonitor
         private const String HKCC = "HKEY_CURRENT_CONFIG";
 
         private static Color ToggleSwitchOnColor = Color.Green;
+        private static Dictionary<RegistryValueKind, String> translateRegKind = new Dictionary<RegistryValueKind, String> {
+            { RegistryValueKind.Binary, "REG_BINARY" },
+            { RegistryValueKind.DWord, "REG_DWORD" },
+            { RegistryValueKind.ExpandString, "REG_EXPAND_SZ" },
+            { RegistryValueKind.MultiString, "REG_MULTI_SZ" },
+            { RegistryValueKind.QWord, "REG_QWORD" },
+            { RegistryValueKind.String, "REG_SZ" }
+        };
+
+        private DateTime loadStarted, loadFinished;
+        private DateTime? preInstallFoldersStarted = null;
+        private DateTime? preInstallRegistryStarted = null;
+        private DateTime? preInstallServicesStarted = null;
+        private DateTime? postInstallFoldersStarted = null;
+        private DateTime? postInstallFoldersFinished = null;
+        private DateTime? postInstallRegistryStarted = null;
+        private DateTime? postInstallRegistryFinished = null;
+        private DateTime? postInstallServicesStarted = null;
+        private DateTime? postInstallServicesFinished = null;
+        private FolderBrowserDialog fbdAddFolder = new FolderBrowserDialog();
+        private RegistryKeyBrowserDialog rkbdAddKey = new RegistryKeyBrowserDialog();
+        private SaveFileDialog sfdSaveReport = new SaveFileDialog();
+        private SortedDictionary<String, Boolean> folderContentsAdded = new SortedDictionary<String, Boolean>();
+        private SortedDictionary<String, Boolean> folderContentsModified = new SortedDictionary<String, Boolean>();
+        private SortedDictionary<String, RegistryEntryInfo> registryContentsAdded = new SortedDictionary<String, RegistryEntryInfo>();
+        private SortedDictionary<String, RegistryEntryDiff> registryContentsModified = new SortedDictionary<String, RegistryEntryDiff>();
+        private SortedDictionary<String, ServiceInfo> servicesAdded = new SortedDictionary<String, ServiceInfo>();
+        private SortedDictionary<String, ServiceDiff> servicesModified = new SortedDictionary<String, ServiceDiff>();
+        private String operation, current;
 
         public WinChangeMonitorForm()
         {
             try
             {
                 InitializeComponent();
+
+                this.menuStrip.Renderer = new CustomToolStripProfessionalRenderer();
 
                 this.cbFileSystemMonitor.SetRenderer(new ToggleSwitchIphoneRenderer() { LeftSideBackColor1 = ToggleSwitchOnColor });
                 this.cbRegistryMonitor.SetRenderer(new ToggleSwitchIphoneRenderer() { LeftSideBackColor1 = ToggleSwitchOnColor });
@@ -68,8 +80,6 @@ namespace WinChangeMonitor
                 Utilities.HandleException(ex);
             }
         }
-
-        private DateTime loadStarted, loadFinished;
 
         private void AutoSizeColumns(ObjectListView olv)
         {
@@ -202,7 +212,7 @@ namespace WinChangeMonitor
 
                     if (!RetainedSettings.RegistryInventory.ContainsKey(fullPath))
                     {
-                        RetainedSettings.RegistryInventory[fullPath] = new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = key.GetValue(valueName)?.ToString() };
+                        RetainedSettings.RegistryInventory[fullPath] = new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = Utilities.PrettyString(key.GetValue(valueName)) };
                     }
                 }
 
@@ -720,19 +730,19 @@ namespace WinChangeMonitor
 
                     if (!RetainedSettings.RegistryInventory.ContainsKey(fullPath))
                     {
-                        this.registryContentsAdded[fullPath] = new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = key.GetValue(valueName)?.ToString() };
+                        this.registryContentsAdded[fullPath] = new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = Utilities.PrettyString(key.GetValue(valueName)) };
                     }
                     else if (RetainedSettings.RegistryInventory[fullPath] == null) // value was a key before and it's a value now
                     {
                         //this.registryContentsRemoved[fullPath] = null;
-                        this.registryContentsAdded[fullPath] = new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = key.GetValue(valueName)?.ToString() };
+                        this.registryContentsAdded[fullPath] = new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = Utilities.PrettyString(key.GetValue(valueName)) };
                     }
                     else // both preinstall and postinstall inventories contain the value, check to see if it was modified
                     {
                         if ((key.GetValueKind(valueName) != RetainedSettings.RegistryInventory[fullPath].Kind) || (key.GetValue(valueName)?.ToString() != RetainedSettings.RegistryInventory[fullPath].Value))
                         {
                             this.registryContentsModified[fullPath] = new RegistryEntryDiff(RetainedSettings.RegistryInventory[fullPath],
-                                                                                            new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = key.GetValue(valueName)?.ToString() });
+                                                                                            new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = Utilities.PrettyString(key.GetValue(valueName)) });
                         }
 
                         RetainedSettings.RegistryInventory.Remove(fullPath); // remove value from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
@@ -796,25 +806,21 @@ namespace WinChangeMonitor
                             (service.CanStop != RetainedSettings.ServicesInventory[service.ServiceName].CanStop) ||
                             (service.DisplayName != RetainedSettings.ServicesInventory[service.ServiceName].DisplayName) ||
                             (service.ServiceType != RetainedSettings.ServicesInventory[service.ServiceName].ServiceType) ||
-                            (service.StartType != RetainedSettings.ServicesInventory[service.ServiceName].StartType) ||
-                            (service.ServicesDependedOn.Length != RetainedSettings.ServicesInventory[service.ServiceName].ServiceNamesDependedOn.Count))
+                            (service.StartType != RetainedSettings.ServicesInventory[service.ServiceName].StartType))
                         {
                             this.servicesModified[service.ServiceName] = new ServiceDiff(RetainedSettings.ServicesInventory[service.ServiceName],
                                                                                          ServiceInfo.Parse(service));
                         }
                         else // everything else matches, now check to see if any of the services depended on changed
                         {
-                            Boolean changed = false;
+                            HashSet<String> serviceNamesDependedOn = new HashSet<String>();
 
-                            for (Int32 i = 0; !changed && (i < service.ServicesDependedOn.Length); ++i)
+                            foreach (ServiceController serviceController in service.ServicesDependedOn)
                             {
-                                if (service.ServicesDependedOn[i].ServiceName != RetainedSettings.ServicesInventory[service.ServiceName].ServiceNamesDependedOn[i])
-                                {
-                                    changed = true;
-                                }
+                                serviceNamesDependedOn.Add(serviceController.ServiceName);
                             }
 
-                            if (changed)
+                            if (!serviceNamesDependedOn.SetEquals(RetainedSettings.ServicesInventory[service.ServiceName].ServiceNamesDependedOn))
                             {
                                 this.servicesModified[service.ServiceName] = new ServiceDiff(RetainedSettings.ServicesInventory[service.ServiceName],
                                                                                              ServiceInfo.Parse(service));
@@ -830,8 +836,6 @@ namespace WinChangeMonitor
                 Utilities.HandleException(ex);
             }
         }
-
-        private const Int32 TotalPaddedSize = 8;
 
         private void bwPostInstall_DoWork(Object sender, DoWorkEventArgs e)
         {
@@ -1096,7 +1100,7 @@ namespace WinChangeMonitor
             }
         }
 
-        private void LoadTrackedFoldersFromConfig(String settingName)
+        private Boolean LoadTrackedFoldersFromConfig(String settingName)
         {
             try
             {
@@ -1105,51 +1109,56 @@ namespace WinChangeMonitor
                 try
                 {
                     String trackedFolders = ConfigurationManager.AppSettings[settingName];
-                    if (trackedFolders != null)
+                    if (trackedFolders == null)
                     {
-                        String[] folderPairs = trackedFolders.Split('|');
+                        return false;
+                    }
 
-                        RetainedSettings.FoldersToTrack.Clear();
+                    String[] folderPairs = trackedFolders.Split('|');
 
-                        foreach (String folderPair in folderPairs)
+                    RetainedSettings.FoldersToTrack.Clear();
+
+                    foreach (String folderPair in folderPairs)
+                    {
+                        String[] folderIncludeSub = folderPair.Split('?');
+
+                        if ((folderIncludeSub.Length > 0) && !String.IsNullOrWhiteSpace(folderIncludeSub[0]))
                         {
-                            String[] folderIncludeSub = folderPair.Split('?');
-
-                            if ((folderIncludeSub.Length > 0) && !String.IsNullOrWhiteSpace(folderIncludeSub[0]))
+                            if (Directory.Exists(folderIncludeSub[0]))
                             {
-                                if (Directory.Exists(folderIncludeSub[0]))
+                                Boolean includeSubFolders = false; // default to false if not present or parsing fails
+
+                                if (folderIncludeSub.Length > 1)
                                 {
-                                    Boolean includeSubFolders = false; // default to false if not present or parsing fails
-
-                                    if (folderIncludeSub.Length > 1)
-                                    {
-                                        try { includeSubFolders = Boolean.Parse(folderIncludeSub[1]); } catch (Exception) { } // if parsing fails, includeSubFolders is already set to false
-                                    }
-
-                                    RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder { Folder = folderIncludeSub[0], IncludeSubFolders = includeSubFolders });
+                                    try { includeSubFolders = Boolean.Parse(folderIncludeSub[1]); } catch (Exception) { } // if parsing fails, includeSubFolders is already set to false
                                 }
+
+                                RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder { Folder = folderIncludeSub[0], IncludeSubFolders = includeSubFolders });
                             }
                         }
-
-                        valid = true;
                     }
+
+                    valid = true;
                 }
                 catch (ConfigurationErrorsException)
                 {
                     valid = false;
                 }
 
-                if (!valid) // handle the cases with incorrectly formatted App.config or AppSettings[settingName] == null
+                if (!valid) // handle the case with incorrectly formatted App.config
                 {
                     RetainedSettings.FoldersToTrack.Clear();
 
                     // handle the case where user incorrectly modified App.config
                     RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder { Folder = @"C:\", IncludeSubFolders = true });
                 }
+
+                return true;
             }
             catch (Exception ex)
             {
                 Utilities.HandleException(ex);
+                throw;
             }
         }
 
@@ -1211,7 +1220,7 @@ namespace WinChangeMonitor
             }
         }
 
-        private void LoadTrackedKeysFromConfig(String settingName)
+        private Boolean LoadTrackedKeysFromConfig(String settingName)
         {
             try
             {
@@ -1220,34 +1229,36 @@ namespace WinChangeMonitor
                 try
                 {
                     String trackedKeys = ConfigurationManager.AppSettings[settingName];
-                    if (trackedKeys != null)
+                    if (trackedKeys == null)
                     {
-                        String[] keyPairs = trackedKeys.Split('|');
+                        return false;
+                    }
 
-                        RetainedSettings.KeysToTrack.Clear();
+                    String[] keyPairs = trackedKeys.Split('|');
 
-                        foreach (String keyPair in keyPairs)
+                    RetainedSettings.KeysToTrack.Clear();
+
+                    foreach (String keyPair in keyPairs)
+                    {
+                        String[] keyIncludeSub = keyPair.Split('?');
+
+                        if (keyIncludeSub.Length > 0)
                         {
-                            String[] keyIncludeSub = keyPair.Split('?');
-
-                            if (keyIncludeSub.Length > 0)
+                            if (OpenRegistryKey(keyIncludeSub[0]) != null)
                             {
-                                if (OpenRegistryKey(keyIncludeSub[0]) != null)
+                                Boolean includeSubKeys = false; // default to false if not present or parsing fails
+
+                                if (keyIncludeSub.Length > 1)
                                 {
-                                    Boolean includeSubKeys = false; // default to false if not present or parsing fails
-
-                                    if (keyIncludeSub.Length > 1)
-                                    {
-                                        try { includeSubKeys = Boolean.Parse(keyIncludeSub[1]); } catch (Exception) { } // if parsing fails, includeSubKeys is already set to false
-                                    }
-
-                                    RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = keyIncludeSub[0], IncludeSubKeys = includeSubKeys });
+                                    try { includeSubKeys = Boolean.Parse(keyIncludeSub[1]); } catch (Exception) { } // if parsing fails, includeSubKeys is already set to false
                                 }
+
+                                RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = keyIncludeSub[0], IncludeSubKeys = includeSubKeys });
                             }
                         }
-
-                        valid = true;
                     }
+
+                    valid = true;
                 }
                 catch (ConfigurationErrorsException)
                 {
@@ -1265,10 +1276,13 @@ namespace WinChangeMonitor
                     RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKU, IncludeSubKeys = true });
                     RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = HKCC, IncludeSubKeys = true });
                 }
+
+                return true;
             }
             catch (Exception ex)
             {
                 Utilities.HandleException(ex);
+                throw;
             }
         }
 
@@ -1337,17 +1351,37 @@ namespace WinChangeMonitor
         {
             try
             {
-                //Directory.CreateDirectory(Path.GetDirectoryName(htmlPath));
-
-                String htmlPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), htmlFile);
-
-
-                using (StreamWriter writer = new StreamWriter(htmlPath, false, Encoding.UTF8))
+                using (StreamWriter writer = new StreamWriter(htmlFile, false, Encoding.UTF8))
                 {
                     writer.WriteLine("<!DOCTYPE html>");
                     writer.WriteLine("<html>");
                     writer.WriteLine("<head>");
                     writer.WriteLine("<title>WinChangeMonitor Installation Report</title>");
+                    writer.WriteLine("<style>");
+                    writer.WriteLine("table {");
+                    writer.WriteLine("table-layout: fixed;");
+                    writer.WriteLine("}");
+                    writer.WriteLine("table, th, td {");
+                    writer.WriteLine("border: 1px solid black;");
+                    writer.WriteLine("border-collapse: collapse;");
+                    writer.WriteLine("padding: 8px;");
+                    writer.WriteLine("}");
+                    writer.WriteLine("#number-td {");
+                    writer.WriteLine("width: 50px");
+                    writer.WriteLine("}");
+                    writer.WriteLine("#name-td {");
+                    writer.WriteLine("text-align: left;");
+                    writer.WriteLine("}");
+                    writer.WriteLine("#type-td {");
+                    writer.WriteLine("width: 150px;");
+                    writer.WriteLine("}");
+                    writer.WriteLine("#value-td {");
+                    writer.WriteLine("width: 150px;");
+                    writer.WriteLine("}");
+                    writer.WriteLine("td {");
+                    writer.WriteLine("text-align: center;");
+                    writer.WriteLine("}");
+                    writer.WriteLine("</style>");
                     writer.WriteLine("</head>");
                     writer.WriteLine("<body>");
                     writer.WriteLine("<center>");
@@ -1379,185 +1413,260 @@ namespace WinChangeMonitor
                     {
                         // --- FILE SYSTEM INVENTORY ---
                         writer.WriteLine("<h2>File System Inventory</h2>");
+
                         writer.WriteLine("<h4>Tracked Folders</h4>");
                         writer.WriteLine("<table>");
-                        writer.WriteLine("<tr><th>Folder</th><th>Include Sub-Folders?</th></tr>");
-
+                        writer.WriteLine("<tr>");
+                        writer.WriteLine("<th>Folder</th>");
+                        writer.WriteLine("<th>Include Sub-Folders?</th>");
+                        writer.WriteLine("</tr>");
                         foreach (RetainedSettings.FileSystemSettings.TrackedFolder trackedFolder in RetainedSettings.FoldersToTrack)
                         {
-                            writer.WriteLine($"<tr><td>{trackedFolder.Folder}</td><td align=\"center\">{trackedFolder.IncludeSubFolders}</td></tr>");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine($"<td>{trackedFolder.Folder}</td>");
+                            writer.WriteLine($"<td>{(trackedFolder.IncludeSubFolders ? "Yes" : "No")}</td>");
+                            writer.WriteLine("</tr>");
                         }
-
                         writer.WriteLine("</table>");
 
                         writer.WriteLine("<h4 id=\"file_system_added\">File System Contents Added</h4>");
 
-                        writer.WriteLine("<table>");
-                        writer.WriteLine("<tr>");
-                        writer.WriteLine("<td>");
-
                         if (this.folderContentsAdded.Count == 0)
                         {
-                            writer.WriteLine("Nothing was added");
+                            writer.WriteLine("<div>Nothing was added</div>");
                         }
                         else
                         {
-                            writer.WriteLine("<ol>");
+                            writer.WriteLine("<table width=\"100%\">");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine("<th id=\"number-td\">#</th>");
+                            writer.WriteLine("<th>Name</th>");
+                            writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
+                            writer.WriteLine("</tr>");
+                            UInt64 count = 1;
                             foreach (KeyValuePair<String, Boolean> addedItem in this.folderContentsAdded)
                             {
-                                writer.WriteLine($"<li>{WebUtility.HtmlEncode(addedItem.Key)} ({WebUtility.HtmlEncode(addedItem.Value ? "Folder" : "File")})</li>");
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{count}</td>");
+                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
+                                writer.WriteLine($"<td>{(addedItem.Value ? "Folder" : "File")}</td>");
+                                writer.WriteLine("</tr>");
+                                ++count;
                             }
-                            writer.WriteLine("</ol>");
+                            writer.WriteLine("</table>");
                         }
-
-                        writer.WriteLine("</td>");
-                        writer.WriteLine("</tr>");
-                        writer.WriteLine("</table>");
 
                         writer.WriteLine("<h4 id=\"file_system_modified\">File System Contents Modified</h4>");
 
-                        writer.WriteLine("<table>");
-                        writer.WriteLine("<tr>");
-                        writer.WriteLine("<td>");
-
                         if (this.folderContentsModified.Count == 0)
                         {
-                            writer.WriteLine("Nothing was modified");
+                            writer.WriteLine("<div>Nothing was modified</div>");
                         }
                         else
                         {
-                            writer.WriteLine("<ol>");
+                            writer.WriteLine("<table width=\"100%\">");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine("<th id=\"number-td\">#</th>");
+                            writer.WriteLine("<th>Name</th>");
+                            writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
+                            writer.WriteLine("</tr>");
+                            UInt64 count = 1;
                             foreach (KeyValuePair<String, Boolean> modifiedItem in this.folderContentsModified)
                             {
-                                writer.WriteLine($"<li>{WebUtility.HtmlEncode(modifiedItem.Key)} ({WebUtility.HtmlEncode(modifiedItem.Value ? "Folder" : "File")})</li>");
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{count}</td>");
+                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
+                                writer.WriteLine($"<td>{(modifiedItem.Value ? "Folder" : "File")}</td>");
+                                writer.WriteLine("</tr>");
+                                ++count;
                             }
-                            writer.WriteLine("</ol>");
-
+                            writer.WriteLine("</table>");
                         }
-
-                        writer.WriteLine("</td>");
-                        writer.WriteLine("</tr>");
-                        writer.WriteLine("</table>");
 
                         writer.WriteLine("<h4 id=\"file_system_removed\">File System Contents Removed</h4>");
 
-                        writer.WriteLine("<table>");
-                        writer.WriteLine("<tr>");
-                        writer.WriteLine("<td>");
-
                         if (RetainedSettings.FileSystemInventory.Count == 0)
                         {
-                            writer.WriteLine("Nothing was removed");
+                            writer.WriteLine("<div>Nothing was removed</div>");
                         }
                         else
                         {
-                            writer.WriteLine("<ol>");
-
+                            writer.WriteLine("<table width=\"100%\">");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine("<th id=\"number-td\">#</th>");
+                            writer.WriteLine("<th>Name</th>");
+                            writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
+                            writer.WriteLine("</tr>");
+                            UInt64 count = 1;
                             foreach (KeyValuePair<String, RetainedSettings.FileSystemSettings.FileSystemEntryInfo> removedItem in RetainedSettings.FileSystemInventory)
                             {
-                                writer.WriteLine($"<li>{WebUtility.HtmlEncode(removedItem.Key)} ({WebUtility.HtmlEncode(removedItem.Value.IsFolder ? "Folder" : "File")})</li>");
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{count}</td>");
+                                writer.WriteLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</td>");
+                                writer.WriteLine($"<td><i>{(removedItem.Value.IsFolder ? "Folder" : "File")}</i></td>");
+                                writer.WriteLine("</tr>");
                             }
-
-                            writer.WriteLine("</ol>");
+                            writer.WriteLine("</table>");
                         }
-
-                        writer.WriteLine("</td>");
-                        writer.WriteLine("</tr>");
-                        writer.WriteLine("</table>");
                     }
 
                     if (this.cbRegistryMonitor.Checked)
                     {
                         // --- REGISTRY INVENTORY ---
                         writer.WriteLine("<h2>Registry Inventory</h2>");
+
                         writer.WriteLine("<h4>Tracked Keys</h4>");
                         writer.WriteLine("<table>");
-                        writer.WriteLine("<tr><th>Key</th><th>Include Sub-Keys?</th></tr>");
-
+                        writer.WriteLine("<tr>");
+                        writer.WriteLine("<th>Key</th>");
+                        writer.WriteLine("<th>Include Sub-Keys?</th>");
+                        writer.WriteLine("</tr>");
                         foreach (RetainedSettings.RegistrySettings.TrackedKey trackedKey in RetainedSettings.KeysToTrack)
                         {
-                            writer.WriteLine($"<tr><td>{trackedKey.Key}</td><td align=\"center\">{trackedKey.IncludeSubKeys}</td></tr>");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine($"<td>{trackedKey.Key}</td>");
+                            writer.WriteLine($"<td>{(trackedKey.IncludeSubKeys ? "Yes" : "No")}</td>");
+                            writer.WriteLine("</tr>");
                         }
-
                         writer.WriteLine("</table>");
 
                         writer.WriteLine("<h4 id=\"registry_added\">Registry Contents Added</h4>");
 
-                        writer.WriteLine("<table>");
-                        writer.WriteLine("<tr>");
-                        writer.WriteLine("<td>");
-
                         if (this.registryContentsAdded.Count == 0)
                         {
-                            writer.WriteLine("Nothing was added");
+                            writer.WriteLine("<div>Nothing was added</div>");
                         }
                         else
                         {
-                            writer.WriteLine("<ol>");
-
+                            writer.WriteLine("<table width=\"100%\">");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine("<th id=\"number-td\">#</th>");
+                            writer.WriteLine("<th>Name</th>");
+                            writer.WriteLine("<th id=\"type-td\">Type</th>");
+                            writer.WriteLine("<th id=\"value-td\">Value</th>");
+                            writer.WriteLine("</tr>");
+                            UInt64 count = 1;
                             foreach (KeyValuePair<String, RegistryEntryInfo> addedItem in this.registryContentsAdded)
                             {
-                                writer.WriteLine($"<li>{WebUtility.HtmlEncode(addedItem.Key)} ({WebUtility.HtmlEncode(addedItem.Value == null ? "Key" : "Value")})</li>");
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{count}</td>");
+                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
+
+                                if (addedItem.Value == null)
+                                {
+                                    writer.WriteLine("<td>Key</td>");
+                                    writer.WriteLine("<td></td>");
+                                }
+                                else
+                                {
+                                    writer.WriteLine($"<td>{WebUtility.HtmlEncode(translateRegKind[addedItem.Value.Kind])}</td>");
+                                    writer.WriteLine("<td>");
+                                    writer.WriteLine(Utilities.HandleValueWithZeroDelimiter(addedItem.Value.Value));
+                                    writer.WriteLine("</td>");
+                                }
+
+                                writer.WriteLine("</tr>");
+                                ++count;
                             }
-
-                            writer.WriteLine("</ol>");
+                            writer.WriteLine("</table>");
                         }
-
-                        writer.WriteLine("</td>");
-                        writer.WriteLine("</tr>");
-                        writer.WriteLine("</table>");
 
                         writer.WriteLine("<h4 id=\"registry_modified\">Registry Contents Modified</h4>");
 
-                        writer.WriteLine("<table>");
-                        writer.WriteLine("<tr>");
-                        writer.WriteLine("<td>");
-
                         if (this.registryContentsModified.Count == 0)
                         {
-                            writer.WriteLine("Nothing was modified");
+                            writer.WriteLine("<div>Nothing was modified</div>");
                         }
                         else
                         {
-                            writer.WriteLine("<ol>");
-
+                            writer.WriteLine("<table width=\"100%\">");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine("<th id=\"number-td\">#</th>");
+                            writer.WriteLine("<th>Name</th>");
+                            writer.WriteLine("<th id=\"type-td\">Type</th>");
+                            writer.WriteLine("<th id=\"value-td\">Value</th>");
+                            writer.WriteLine("</tr>");
+                            UInt64 count = 1;
                             foreach (KeyValuePair<String, RegistryEntryDiff> modifiedItem in this.registryContentsModified)
                             {
-                                writer.WriteLine($"<li>{WebUtility.HtmlEncode(modifiedItem.Key)} ({WebUtility.HtmlEncode(modifiedItem.Value == null ? "Key" : "Value")})</li>");
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td rowspan=\"2\">{count}</td>");
+                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
+
+                                if (modifiedItem.Value == null) // this isn't really possible to modify a registry key (renaming it would report the original key as deleted and the renamed key as new)
+                                {
+                                    writer.WriteLine("<td>Key</td>");
+                                    writer.WriteLine("<td></td>");
+                                }
+                                else
+                                {  
+                                    writer.WriteLine($"<td>{WebUtility.HtmlEncode(translateRegKind[modifiedItem.Value.Current.Kind])}</td>");
+                                    writer.WriteLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value.Current.Value)}</td>");
+                                    writer.WriteLine("</tr>");
+                                    writer.WriteLine("<tr>");
+                                    writer.WriteLine("<td><i>(original if different)</i></td>");
+                                    writer.WriteLine("<td>");
+                                    if (modifiedItem.Value.Current.Kind != modifiedItem.Value.Initial.Kind)
+                                    {
+                                        writer.WriteLine($"<i>{WebUtility.HtmlEncode(translateRegKind[modifiedItem.Value.Initial.Kind])}</i>");
+                                    }
+                                    writer.WriteLine("</td>");
+                                    writer.WriteLine("<td>");
+                                    if (modifiedItem.Value.Current.Value != modifiedItem.Value.Initial.Value)
+                                    {
+                                        writer.WriteLine("<i>");
+                                        writer.WriteLine(Utilities.HandleValueWithZeroDelimiter(modifiedItem.Value.Initial.Value));
+                                        writer.WriteLine("</i>");
+                                    }
+                                    writer.WriteLine("</td>");
+                                }
+
+                                writer.WriteLine("</tr>");
+                                ++count;
                             }
-
-                            writer.WriteLine("</ol>");
+                            writer.WriteLine("</table>");
                         }
-
-                        writer.WriteLine("</td>");
-                        writer.WriteLine("</tr>");
-                        writer.WriteLine("</table>");
 
                         writer.WriteLine("<h4 id=\"registry_removed\">Registry Contents Removed</h4>");
 
-                        writer.WriteLine("<table>");
-                        writer.WriteLine("<tr>");
-                        writer.WriteLine("<td>");
-
                         if (RetainedSettings.RegistryInventory.Count == 0)
                         {
-                            writer.WriteLine("Nothing was removed");
+                            writer.WriteLine("<div>Nothing was removed</div>");
                         }
                         else
                         {
-                            writer.WriteLine("<ol>");
-
+                            writer.WriteLine("<table width=\"100%\">");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine("<th id=\"number-td\">#</th>");
+                            writer.WriteLine("<th>Name</th>");
+                            writer.WriteLine("<th id=\"type-td\">Type</th>");
+                            writer.WriteLine("<th id=\"value-td\">Value</th>");
+                            writer.WriteLine("</tr>");
+                            UInt64 count = 1;
                             foreach (KeyValuePair<String, RegistryEntryInfo> removedItem in RetainedSettings.RegistryInventory)
                             {
-                                writer.WriteLine($"<li>{WebUtility.HtmlEncode(removedItem.Key)} ({WebUtility.HtmlEncode(removedItem.Value == null ? "Key" : "Value")})</li>");
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{count}</td>");
+                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(removedItem.Key)}</td>");
+
+                                if (removedItem.Value == null)
+                                {
+                                    writer.WriteLine($"<td><i>Key</i></td>");
+                                    writer.WriteLine($"<td></td>");
+                                }
+                                else
+                                {
+                                    writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(translateRegKind[removedItem.Value.Kind])}</i></td>");
+                                    writer.WriteLine("<td><i>");
+                                    writer.WriteLine(Utilities.HandleValueWithZeroDelimiter(removedItem.Value.Value));
+                                    writer.WriteLine($"</i></td>");
+                                }
+
+                                writer.WriteLine("</tr>");
+                                ++count;
                             }
-
-                            writer.WriteLine("</ol>");
+                            writer.WriteLine("</table>");
                         }
-
-                        writer.WriteLine("</td>");
-                        writer.WriteLine("</tr>");
-                        writer.WriteLine("</table>");
                     }
 
                     if (this.cbServicesMonitor.Checked)
@@ -1567,81 +1676,166 @@ namespace WinChangeMonitor
 
                         writer.WriteLine("<h4 id=\"services_added\">Services Added</h4>");
 
-                        writer.WriteLine("<table>");
-                        writer.WriteLine("<tr>");
-                        writer.WriteLine("<td>");
-
                         if (this.servicesAdded.Count == 0)
                         {
-                            writer.WriteLine("Nothing was added");
+                            writer.WriteLine("<div>Nothing was added</div>");
                         }
                         else
                         {
-                            writer.WriteLine("<ol>");
+                            writer.WriteLine("<table width=\"100%\">");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine("<th id=\"number-td\">#</th>");
+                            writer.WriteLine("<th id=\"value-td\">Service</th>");
+                            writer.WriteLine("<th id=\"value-td\">CanPauseAndContinue</th>");
+                            writer.WriteLine("<th id=\"value-td\">CanShutdown</th>");
+                            writer.WriteLine("<th id=\"value-td\">CanStop</th>");
+                            writer.WriteLine("<th>DisplayName</th>");
+                            writer.WriteLine("<th id=\"value-td\">ServicesDependedOn</th>");
+                            writer.WriteLine("<th id=\"value-td\">ServiceType</th>");
+                            writer.WriteLine("<th id=\"value-td\">StartType</th>");
+                            writer.WriteLine("</tr>");
 
+                            UInt64 count = 1;
                             foreach (KeyValuePair<String, ServiceInfo> addedItem in this.servicesAdded)
                             {
-                                writer.WriteLine($"<li>{addedItem.Key}</li>");
+                                writer.WriteLine("<tr>");
+                                
+                                ServiceInfo s = addedItem.Value; // allows "s." to get properties instead of "addedItem.Value."
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{count}</td>");
+                                writer.WriteLine($"<td id=\"name-td\">{addedItem.Key}</td>");
+                                writer.WriteLine($"<td>{s.CanPauseAndContinue}</td>");
+                                writer.WriteLine($"<td>{s.CanShutdown}</td>");
+                                writer.WriteLine($"<td>{s.CanStop}</td>");
+                                writer.WriteLine($"<td>{s.DisplayName}</td>");
+                                writer.WriteLine("<td>");
+                                foreach (String serviceNameDependedOn in s.ServiceNamesDependedOn)
+                                {
+                                    writer.WriteLine($"<div>{serviceNameDependedOn}</div>");
+                                }
+                                writer.WriteLine("</td>");
+                                writer.WriteLine($"<td>{s.StartType}</td>");
+                                writer.WriteLine("</tr>");
+
+                                ++count;
                             }
 
-                            writer.WriteLine("</ol>");
+                            writer.WriteLine("</table>");
                         }
-
-                        writer.WriteLine("</td>");
-                        writer.WriteLine("</tr>");
-                        writer.WriteLine("</table>");
 
                         writer.WriteLine("<h4 id=\"services_modified\">Services Modified</h4>");
 
-                        writer.WriteLine("<table>");
-                        writer.WriteLine("<tr>");
-                        writer.WriteLine("<td>");
-
                         if (this.servicesModified.Count == 0)
                         {
-                            writer.WriteLine("Nothing was modified");
+                            writer.WriteLine("<div>Nothing was modified</div>");
                         }
                         else
                         {
-                            writer.WriteLine("<ol>");
-
+                            writer.WriteLine("<table width=\"100%\">");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine("<th id=\"number-td\">#</th>");
+                            writer.WriteLine("<th id=\"value-td\">Service</th>");
+                            writer.WriteLine("<th id=\"value-td\">CanPauseAndContinue</th>");
+                            writer.WriteLine("<th id=\"value-td\">CanShutdown</th>");
+                            writer.WriteLine("<th id=\"value-td\">CanStop</th>");
+                            writer.WriteLine("<th>DisplayName</th>");
+                            writer.WriteLine("<th id=\"value-td\">ServicesDependedOn</th>");
+                            writer.WriteLine("<th id=\"value-td\">ServiceType</th>");
+                            writer.WriteLine("<th id=\"value-td\">StartType</th>");
+                            writer.WriteLine("</tr>");
+                            UInt64 count = 1;
                             foreach (KeyValuePair<String, ServiceDiff> modifiedItem in this.servicesModified)
                             {
-                                writer.WriteLine($"<li>{modifiedItem.Key}</li>");
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td rowspan=\"2\">{count}</td>");
+                                writer.WriteLine($"<td id=\"name-td\">{modifiedItem.Key}</td>");
+                                ServiceInfo curr = modifiedItem.Value.Current; // allows "curr." to get Current properties instead of "modifiedItem.Value.Current."
+                                writer.WriteLine($"<td>{curr.CanPauseAndContinue}</td>");
+                                writer.WriteLine($"<td>{curr.CanShutdown}</td>");
+                                writer.WriteLine($"<td>{curr.CanStop}</td>");
+                                writer.WriteLine($"<td>{curr.DisplayName}</td>");
+                                writer.WriteLine("<td>");
+                                foreach (String serviceNameDependedOn in curr.ServiceNamesDependedOn)
+                                {
+                                    writer.WriteLine($"<div>{serviceNameDependedOn}</div>");
+                                }
+                                writer.WriteLine("</td>");
+                                writer.WriteLine($"<td>{curr.ServiceType}</td>");
+                                writer.WriteLine($"<td>{curr.StartType}</td>");
+                                writer.WriteLine("</tr>");
+                                writer.WriteLine($"<tr>");
+                                writer.WriteLine("<td><i>(original if different)</i></td>");
+                                ServiceInfo init = modifiedItem.Value.Initial; //allows "init." to get Initial properties instead of "modifiedItem.Value.Initial."
+                                writer.WriteLine($"<td><i>{(curr.CanPauseAndContinue != init.CanPauseAndContinue ? init.CanPauseAndContinue.ToString() : "")}</i></td>");
+                                writer.WriteLine($"<td><i>{(curr.CanShutdown != init.CanShutdown ? init.CanShutdown.ToString() : "")}</i></td>");
+                                writer.WriteLine($"<td><i>{(curr.CanStop != init.CanStop ? init.CanStop.ToString() : "")}</i></td>");
+                                writer.WriteLine($"<td><i>{(curr.DisplayName != init.DisplayName ? init.DisplayName : "")}</i></td>");
+                                writer.WriteLine("<td>");
+                                if (!curr.ServiceNamesDependedOn.SetEquals(init.ServiceNamesDependedOn))
+                                {
+                                    foreach(String serviceNameDependedOn in init.ServiceNamesDependedOn)
+                                    {
+                                        writer.WriteLine($"<div><i>{serviceNameDependedOn}</i></div>");
+                                    }
+                                }
+                                writer.WriteLine("</td>");
+                                writer.WriteLine($"<td><i>{(curr.ServiceType != init.ServiceType ? init.ServiceType.ToString() : "")}</i></td>");
+                                writer.WriteLine($"<td><i>{(curr.StartType != init.StartType ? init.StartType.ToString() : "")}</i></td>");
+                                writer.WriteLine("</tr>");
+
+                                ++count;
                             }
-
-                            writer.WriteLine("</ol>");
+                            writer.WriteLine("</table>");
                         }
-
-                        writer.WriteLine("</td>");
-                        writer.WriteLine("</tr>");
-                        writer.WriteLine("</table>");
 
                         writer.WriteLine("<h4 id=\"services_removed\">Services Removed</h4>");
 
-                        writer.WriteLine("<table>");
-                        writer.WriteLine("<tr>");
-                        writer.WriteLine("<td>");
-
                         if (RetainedSettings.ServicesInventory.Count == 0)
                         {
-                            writer.WriteLine("Nothing was removed");
+                            writer.WriteLine("<div>Nothing was removed</div>");
                         }
                         else
                         {
-                            writer.WriteLine("<ol>");
+                            writer.WriteLine("<table width=\"100%\">");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine("<th id=\"number-td\">#</th>");
+                            writer.WriteLine("<th id=\"value-td\">Service</th>");
+                            writer.WriteLine("<th id=\"value-td\">CanPauseAndContinue</th>");
+                            writer.WriteLine("<th id=\"value-td\">CanShutdown</th>");
+                            writer.WriteLine("<th id=\"value-td\">CanStop</th>");
+                            writer.WriteLine("<th>DisplayName</th>");
+                            writer.WriteLine("<th id=\"value-td\">ServicesDependedOn</th>");
+                            writer.WriteLine("<th id=\"value-td\">ServiceType</th>");
+                            writer.WriteLine("<th id=\"value-td\">StartType</th>");
+                            writer.WriteLine("</tr>");
 
+                            UInt64 count = 1;
                             foreach (KeyValuePair<String, ServiceInfo> removedItem in RetainedSettings.ServicesInventory)
                             {
-                                writer.WriteLine($"<li>{removedItem.Key}</li>");
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{count}</td>");
+
+                                ServiceInfo s = removedItem.Value; // allows "s." to get properties instead of "removedItem.Value."
+                                writer.WriteLine($"<td id=\"name-td\"><i>{removedItem.Key}</i></td>");
+                                writer.WriteLine($"<td><i>{s.CanPauseAndContinue}</i></td>");
+                                writer.WriteLine($"<td><i>{s.CanShutdown}</i></td>");
+                                writer.WriteLine($"<td><i>{s.CanStop}</i></td>");
+                                writer.WriteLine($"<td><i>{s.DisplayName}</i></td>");
+                                writer.WriteLine("<td>");
+                                foreach (String serviceNameDependedOn in s.ServiceNamesDependedOn)
+                                {
+                                    writer.WriteLine($"<div><i>{serviceNameDependedOn}</i></div>");
+                                }
+                                writer.WriteLine("</td>");
+                                writer.WriteLine($"<td><i>{s.ServiceType}</i></td>");
+                                writer.WriteLine($"<td><i>{s.StartType}</i></td>");
+                                writer.WriteLine("</tr>");
+
+                                ++count;
                             }
 
-                            writer.WriteLine("</ol>");
+                            writer.WriteLine("</table>");
                         }
-
-                        writer.WriteLine("</td>");
-                        writer.WriteLine("</tr>");
-                        writer.WriteLine("</table>");
                     }
 
                     writer.WriteLine("</center>");
@@ -1694,8 +1888,14 @@ namespace WinChangeMonitor
 
                 if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
                 {
-                    LoadTrackedFoldersFromConfig("lastTrackedFolders");
-                    LoadTrackedKeysFromConfig("lastTrackedKeys");
+                    if (!LoadTrackedFoldersFromConfig("lastTrackedFolders"))
+                    {
+                        LoadTrackedFoldersFromConfig("defaultTrackedFolders");
+                    }
+                    if (!LoadTrackedKeysFromConfig("lastTrackedKeys"))
+                    {
+                        LoadTrackedKeysFromConfig("defaultTrackedKeys");
+                    }
 
                     this.cbFileSystemMonitor.Checked = true;
                     this.olvFoldersToTrack.Visible = this.bAddFolder.Visible = this.bRemoveFolder.Visible = true;
@@ -1768,6 +1968,39 @@ namespace WinChangeMonitor
             else
             {
                 base.OnRenderItemText(e);
+            }
+        }
+    }
+
+    public class CustomToolStripProfessionalRenderer : ToolStripProfessionalRenderer
+    {
+        protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
+        {
+            try
+            {
+                if (e.Item.Enabled)
+                {
+                    base.OnRenderMenuItemBackground(e);
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        protected override void OnRenderButtonBackground(ToolStripItemRenderEventArgs e)
+        {
+            try
+            {
+                if (e.Item.Enabled)
+                {
+                    base.OnRenderMenuItemBackground(e);
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
             }
         }
     }
