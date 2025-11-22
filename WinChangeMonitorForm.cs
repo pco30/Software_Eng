@@ -1647,7 +1647,7 @@ namespace WinChangeMonitor
                             {
                                 writer.WriteLine("<tr>");
                                 writer.WriteLine($"<td>{count}</td>");
-                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(removedItem.Key)}</td>");
+                                writer.WriteLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</i></td>");
 
                                 if (removedItem.Value == null)
                                 {
