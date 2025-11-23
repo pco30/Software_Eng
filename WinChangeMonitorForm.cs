@@ -91,7 +91,7 @@ namespace WinChangeMonitor
 
                     foreach (OLVColumn column in olv.Columns)
                     {
-                        column.Width = colWidth;
+                        column.Width = column.MaximumWidth = column.MinimumWidth = colWidth;
                     }
                 }
             }
@@ -899,8 +899,8 @@ namespace WinChangeMonitor
                 RetainedSettings.DeleteRegistrySettings();
                 RetainedSettings.DeleteServicesSettings();
 
-                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
-                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
+                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
+                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
                 this.cbServicesMonitor.Enabled = true;
                 this.bPreInstall.Enabled = true;
             }
@@ -1366,6 +1366,9 @@ namespace WinChangeMonitor
                     writer.WriteLine("border-collapse: collapse;");
                     writer.WriteLine("padding: 8px;");
                     writer.WriteLine("}");
+                    writer.WriteLine("th {");
+                    writer.WriteLine("background-color: #3AA5EB;");
+                    writer.WriteLine("}");
                     writer.WriteLine("#number-td {");
                     writer.WriteLine("width: 50px");
                     writer.WriteLine("}");
@@ -1384,29 +1387,35 @@ namespace WinChangeMonitor
                     writer.WriteLine("</style>");
                     writer.WriteLine("</head>");
                     writer.WriteLine("<body>");
-                    writer.WriteLine("<center>");
                     writer.WriteLine("<h1>WinChangeMonitor - Installation Report</h1>");
+
+
+                    writer.WriteLine("<table style=\"border: 0px\">");
+                    writer.WriteLine("<tr>");
 
                     if (this.cbFileSystemMonitor.Checked)
                     {
-                        writer.WriteLine("<div><a href=\"#file_system_added\">File System Contents Added</a></div>");
-                        writer.WriteLine("<div><a href=\"#file_system_modified\">File System Contents Modified</a></div>");
-                        writer.WriteLine("<div><a href=\"#file_system_removed\">File System Contents Removed</a></div>");
+                        writer.WriteLine("<td style=\"border: 0px\"><a href=\"#file_system_added\">File System Contents Added</a></td>");
+                        writer.WriteLine("<td style=\"border: 0px\"><a href=\"#file_system_modified\">File System Contents Modified</a></td>");
+                        writer.WriteLine("<td style=\"border: 0px\"><a href=\"#file_system_removed\">File System Contents Removed</a></td>");
                     }
 
                     if (this.cbRegistryMonitor.Checked)
                     {
-                        writer.WriteLine("<div><a href=\"#registry_added\">Registry Contents Added</a></div>");
-                        writer.WriteLine("<div><a href=\"#registry_modified\">Registry Contents Modified</a></div>");
-                        writer.WriteLine("<div><a href=\"#registry_removed\">Registry Contents Removed</a></div>");
+                        writer.WriteLine("<td style=\"border: 0px\"><a href=\"#registry_added\">Registry Contents Added</a></td>");
+                        writer.WriteLine("<td style=\"border: 0px\"><a href=\"#registry_modified\">Registry Contents Modified</a></td>");
+                        writer.WriteLine("<td style=\"border: 0px\"><a href=\"#registry_removed\">Registry Contents Removed</a></td>");
                     }
 
                     if (this.cbServicesMonitor.Checked)
                     {
-                        writer.WriteLine("<div><a href=\"#services_added\">Services Added</a></div>");
-                        writer.WriteLine("<div><a href=\"#services_modified\">Services Modified</a></div>");
-                        writer.WriteLine("<div><a href=\"#services_removed\">Services Removed</a></div>");
+                        writer.WriteLine("<td style=\"border: 0px\"><a href=\"#services_added\">Services Added</a></td>");
+                        writer.WriteLine("<td style=\"border: 0px\"><a href=\"#services_modified\">Services Modified</a></td>");
+                        writer.WriteLine("<td style=\"border: 0px\"><a href=\"#services_removed\">Services Removed</a></td>");
                     }
+
+                    writer.WriteLine("</tr>");
+                    writer.WriteLine("</table>");
 
 
                     if (this.cbFileSystemMonitor.Checked)
@@ -1838,7 +1847,6 @@ namespace WinChangeMonitor
                         }
                     }
 
-                    writer.WriteLine("</center>");
                     writer.WriteLine("</body>");
                     writer.WriteLine("</html>");
                 }
