@@ -1423,7 +1423,7 @@ namespace WinChangeMonitor
                         // --- FILE SYSTEM INVENTORY ---
                         writer.WriteLine("<h2>File System Inventory</h2>");
 
-                        writer.WriteLine("<h4>Tracked Folders</h4>");
+                        writer.WriteLine("<h3>Tracked Folders</h3>");
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
                         writer.WriteLine("<th>Folder</th>");
@@ -1438,7 +1438,7 @@ namespace WinChangeMonitor
                         }
                         writer.WriteLine("</table>");
 
-                        writer.WriteLine("<h4 id=\"file_system_added\">File System Contents Added</h4>");
+                        writer.WriteLine("<h3 id=\"file_system_added\">File System Contents Added</h3>");
 
                         if (this.folderContentsAdded.Count == 0)
                         {
@@ -1465,7 +1465,7 @@ namespace WinChangeMonitor
                             writer.WriteLine("</table>");
                         }
 
-                        writer.WriteLine("<h4 id=\"file_system_modified\">File System Contents Modified</h4>");
+                        writer.WriteLine("<h3 id=\"file_system_modified\">File System Contents Modified</h3>");
 
                         if (this.folderContentsModified.Count == 0)
                         {
@@ -1492,7 +1492,7 @@ namespace WinChangeMonitor
                             writer.WriteLine("</table>");
                         }
 
-                        writer.WriteLine("<h4 id=\"file_system_removed\">File System Contents Removed</h4>");
+                        writer.WriteLine("<h3 id=\"file_system_removed\">File System Contents Removed</h3>");
 
                         if (RetainedSettings.FileSystemInventory.Count == 0)
                         {
@@ -1524,7 +1524,7 @@ namespace WinChangeMonitor
                         // --- REGISTRY INVENTORY ---
                         writer.WriteLine("<h2>Registry Inventory</h2>");
 
-                        writer.WriteLine("<h4>Tracked Keys</h4>");
+                        writer.WriteLine("<h3>Tracked Keys</h3>");
                         writer.WriteLine("<table>");
                         writer.WriteLine("<tr>");
                         writer.WriteLine("<th>Key</th>");
@@ -1539,7 +1539,7 @@ namespace WinChangeMonitor
                         }
                         writer.WriteLine("</table>");
 
-                        writer.WriteLine("<h4 id=\"registry_added\">Registry Contents Added</h4>");
+                        writer.WriteLine("<h3 id=\"registry_added\">Registry Contents Added</h3>");
 
                         if (this.registryContentsAdded.Count == 0)
                         {
@@ -1580,7 +1580,7 @@ namespace WinChangeMonitor
                             writer.WriteLine("</table>");
                         }
 
-                        writer.WriteLine("<h4 id=\"registry_modified\">Registry Contents Modified</h4>");
+                        writer.WriteLine("<h3 id=\"registry_modified\">Registry Contents Modified</h3>");
 
                         if (this.registryContentsModified.Count == 0)
                         {
@@ -1636,7 +1636,7 @@ namespace WinChangeMonitor
                             writer.WriteLine("</table>");
                         }
 
-                        writer.WriteLine("<h4 id=\"registry_removed\">Registry Contents Removed</h4>");
+                        writer.WriteLine("<h3 id=\"registry_removed\">Registry Contents Removed</h3>");
 
                         if (RetainedSettings.RegistryInventory.Count == 0)
                         {
@@ -1683,7 +1683,7 @@ namespace WinChangeMonitor
                         // --- SERVICES INVENTORY ---
                         writer.WriteLine("<h2>Services Inventory</h2>");
 
-                        writer.WriteLine("<h4 id=\"services_added\">Services Added</h4>");
+                        writer.WriteLine("<h3 id=\"services_added\">Services Added</h3>");
 
                         if (this.servicesAdded.Count == 0)
                         {
@@ -1732,7 +1732,7 @@ namespace WinChangeMonitor
                             writer.WriteLine("</table>");
                         }
 
-                        writer.WriteLine("<h4 id=\"services_modified\">Services Modified</h4>");
+                        writer.WriteLine("<h3 id=\"services_modified\">Services Modified</h3>");
 
                         if (this.servicesModified.Count == 0)
                         {
@@ -1797,7 +1797,7 @@ namespace WinChangeMonitor
                             writer.WriteLine("</table>");
                         }
 
-                        writer.WriteLine("<h4 id=\"services_removed\">Services Removed</h4>");
+                        writer.WriteLine("<h3 id=\"services_removed\">Services Removed</h3>");
 
                         if (RetainedSettings.ServicesInventory.Count == 0)
                         {
