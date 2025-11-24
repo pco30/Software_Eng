@@ -20,6 +20,7 @@ namespace WinChangeMonitor
 {
     public partial class WinChangeMonitorForm : Form
     {
+        private string generatedReportPath;
         public static SplashScreenForm SplashScreen { get; private set; }
 
         public Boolean ConfirmOnClose { get; set; } = true;
@@ -878,9 +879,10 @@ namespace WinChangeMonitor
                     this.postInstallServicesFinished = DateTime.Now;
                 }
 
+                this.generatedReportPath = this.sfdSaveReport.FileName;
                 GenerateIntallationReportHTML(this.sfdSaveReport.FileName);
 
-                Process.Start(this.sfdSaveReport.FileName);
+                //Process.Start(this.sfdSaveReport.FileName);
             }
             catch (Exception ex)
             {
@@ -892,6 +894,13 @@ namespace WinChangeMonitor
         {
             try
             {
+                if (!String.IsNullOrEmpty(this.generatedReportPath))
+                {
+                    HtmlPreviewForm preview = new HtmlPreviewForm(this.generatedReportPath);
+                    preview.MinimumSize = this.MinimumSize;
+                    preview.Show();
+                }
+
                 this.tsslStatus.Text = "";
 
                 RetainedSettings.DeleteCommonInfo();
@@ -908,6 +917,8 @@ namespace WinChangeMonitor
             {
                 Utilities.HandleException(ex);
             }
+
+            
         }
 
         private void bwLoader_DoWork(Object sender, DoWorkEventArgs e)
@@ -2012,4 +2023,5 @@ namespace WinChangeMonitor
             }
         }
     }
+
 }
