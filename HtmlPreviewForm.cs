@@ -18,11 +18,13 @@ namespace WinChangeMonitor
         public HtmlPreviewForm()
         {
             InitializeComponent();
+            this.Load += new System.EventHandler(this.HtmlPreviewForm_Load);
         }
 
         public HtmlPreviewForm(string htmlPath) : this()
         {
             _htmlPath = htmlPath;
+            //MessageBox.Show("HTML file found:\n" + _htmlPath);
         }
 
         private void HtmlPreviewForm_Load(object sender, EventArgs e)
@@ -33,7 +35,7 @@ namespace WinChangeMonitor
                 return;
             }
 
-            MessageBox.Show("HTML file found:\n" + _htmlPath);
+            //MessageBox.Show("HTML file found:\n" + _htmlPath);
             string readHtmlContent = string.Empty;
             using (StreamReader streamReader = new StreamReader(_htmlPath))
             {
@@ -55,7 +57,14 @@ namespace WinChangeMonitor
 
         private void btViewExternal_Click(object sender, EventArgs e)
         {
-
+            if (!string.IsNullOrEmpty(_htmlPath) && File.Exists(_htmlPath))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                {
+                    FileName = _htmlPath,
+                    UseShellExecute = true   // IMPORTANT: required on Windows 10/11
+                });
+            }
         }
     }
 }
