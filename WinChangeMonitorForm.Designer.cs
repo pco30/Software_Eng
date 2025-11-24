@@ -104,7 +104,7 @@ namespace WinChangeMonitor
             // 
             // gbRegistryMonitor
             // 
-            this.gbRegistryMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.gbRegistryMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbRegistryMonitor.Controls.Add(this.bDefaultTrackedKeys);
             this.gbRegistryMonitor.Controls.Add(this.olvKeysToTrack);
@@ -134,8 +134,8 @@ namespace WinChangeMonitor
             // 
             this.olvKeysToTrack.AllColumns.Add(this.olvcKey);
             this.olvKeysToTrack.AllColumns.Add(this.olvcIncludeSubKeys);
-            this.olvKeysToTrack.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.olvKeysToTrack.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.olvKeysToTrack.CellEditUseWholeCell = false;
             this.olvKeysToTrack.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
@@ -241,7 +241,7 @@ namespace WinChangeMonitor
             // 
             // gbServicesMonitor
             // 
-            this.gbServicesMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.gbServicesMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbServicesMonitor.Controls.Add(this.cbServicesMonitor);
             this.gbServicesMonitor.Location = new System.Drawing.Point(12, 413);
@@ -304,7 +304,7 @@ namespace WinChangeMonitor
             // 
             // gbFileSystemMonitor
             // 
-            this.gbFileSystemMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.gbFileSystemMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbFileSystemMonitor.Controls.Add(this.bDefaultTrackedFolders);
             this.gbFileSystemMonitor.Controls.Add(this.olvFoldersToTrack);
@@ -334,8 +334,8 @@ namespace WinChangeMonitor
             // 
             this.olvFoldersToTrack.AllColumns.Add(this.olvcFolder);
             this.olvFoldersToTrack.AllColumns.Add(this.olvcIncludeSubFolders);
-            this.olvFoldersToTrack.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.olvFoldersToTrack.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.olvFoldersToTrack.CellEditUseWholeCell = false;
             this.olvFoldersToTrack.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {

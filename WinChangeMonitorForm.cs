@@ -20,6 +20,7 @@ namespace WinChangeMonitor
 {
     public partial class WinChangeMonitorForm : Form
     {
+        private string generatedReportPath;
         public static SplashScreenForm SplashScreen { get; private set; }
 
         public Boolean ConfirmOnClose { get; set; } = true;
@@ -878,9 +879,10 @@ namespace WinChangeMonitor
                     this.postInstallServicesFinished = DateTime.Now;
                 }
 
+                this.generatedReportPath = this.sfdSaveReport.FileName;
                 GenerateIntallationReportHTML(this.sfdSaveReport.FileName);
 
-                Process.Start(this.sfdSaveReport.FileName);
+                //Process.Start(this.sfdSaveReport.FileName);
             }
             catch (Exception ex)
             {
@@ -907,6 +909,12 @@ namespace WinChangeMonitor
             catch (Exception ex)
             {
                 Utilities.HandleException(ex);
+            }
+
+            if (!string.IsNullOrEmpty(this.generatedReportPath))
+            {
+                HtmlPreviewForm preview = new HtmlPreviewForm(this.generatedReportPath);
+                preview.Show();
             }
         }
 
@@ -2004,4 +2012,5 @@ namespace WinChangeMonitor
             }
         }
     }
+
 }
