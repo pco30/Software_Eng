@@ -894,6 +894,13 @@ namespace WinChangeMonitor
         {
             try
             {
+                if (!String.IsNullOrEmpty(this.generatedReportPath))
+                {
+                    HtmlPreviewForm preview = new HtmlPreviewForm(this.generatedReportPath);
+                    preview.MinimumSize = this.MinimumSize;
+                    preview.Show();
+                }
+
                 this.tsslStatus.Text = "";
 
                 RetainedSettings.DeleteCommonInfo();
@@ -901,8 +908,8 @@ namespace WinChangeMonitor
                 RetainedSettings.DeleteRegistrySettings();
                 RetainedSettings.DeleteServicesSettings();
 
-                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
-                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
+                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = true;
+                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = true;
                 this.cbServicesMonitor.Enabled = true;
                 this.bPreInstall.Enabled = true;
             }
@@ -911,11 +918,7 @@ namespace WinChangeMonitor
                 Utilities.HandleException(ex);
             }
 
-            if (!string.IsNullOrEmpty(this.generatedReportPath))
-            {
-                HtmlPreviewForm preview = new HtmlPreviewForm(this.generatedReportPath);
-                preview.Show();
-            }
+            
         }
 
         private void bwLoader_DoWork(Object sender, DoWorkEventArgs e)

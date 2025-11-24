@@ -35,10 +35,13 @@
             // 
             // ReportPreviewBrowser
             // 
-            this.ReportPreviewBrowser.Location = new System.Drawing.Point(12, 49);
-            this.ReportPreviewBrowser.MinimumSize = new System.Drawing.Size(20, 20);
+            this.ReportPreviewBrowser.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ReportPreviewBrowser.Location = new System.Drawing.Point(12, 41);
+            this.ReportPreviewBrowser.MinimumSize = new System.Drawing.Size(20, 22);
             this.ReportPreviewBrowser.Name = "ReportPreviewBrowser";
-            this.ReportPreviewBrowser.Size = new System.Drawing.Size(776, 654);
+            this.ReportPreviewBrowser.Size = new System.Drawing.Size(776, 720);
             this.ReportPreviewBrowser.TabIndex = 0;
             this.ReportPreviewBrowser.DocumentCompleted += new System.Windows.Forms.WebBrowserDocumentCompletedEventHandler(this.ReportPreviewBrowser_DocumentCompleted);
             // 
@@ -46,32 +49,33 @@
             // 
             this.btViewExternal.Location = new System.Drawing.Point(12, 12);
             this.btViewExternal.Name = "btViewExternal";
-            this.btViewExternal.Size = new System.Drawing.Size(185, 31);
+            this.btViewExternal.Size = new System.Drawing.Size(92, 23);
             this.btViewExternal.TabIndex = 1;
-            this.btViewExternal.Text = "View in External Browser";
+            this.btViewExternal.Text = "View in Browser";
             this.btViewExternal.UseVisualStyleBackColor = true;
             this.btViewExternal.Click += new System.EventHandler(this.btViewExternal_Click);
             // 
             // btExportJson
             // 
-            this.btExportJson.Location = new System.Drawing.Point(203, 12);
+            this.btExportJson.Location = new System.Drawing.Point(110, 12);
             this.btExportJson.Name = "btExportJson";
-            this.btExportJson.Size = new System.Drawing.Size(141, 31);
+            this.btExportJson.Size = new System.Drawing.Size(92, 23);
             this.btExportJson.TabIndex = 2;
-            this.btExportJson.Text = "Export as Json";
+            this.btExportJson.Text = "Export as JSON";
             this.btExportJson.UseVisualStyleBackColor = true;
             this.btExportJson.Click += new System.EventHandler(this.btExportJson_Click);
             // 
             // HtmlPreviewForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 715);
+            this.ClientSize = new System.Drawing.Size(800, 775);
             this.Controls.Add(this.btExportJson);
             this.Controls.Add(this.btViewExternal);
             this.Controls.Add(this.ReportPreviewBrowser);
             this.Name = "HtmlPreviewForm";
-            this.Text = "HtmlPreviewForm";
+            this.ShowIcon = false;
+            this.Text = "WinChangeMonitor - Installation Report";
             this.ResumeLayout(false);
 
         }
