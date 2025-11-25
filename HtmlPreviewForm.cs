@@ -1,69 +1,95 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace WinChangeMonitor
 {
     public partial class HtmlPreviewForm : Form
     {
-        private string _htmlPath;
+        private String htmlPath = null;
 
         public HtmlPreviewForm()
         {
-            InitializeComponent();
-            this.Load += new System.EventHandler(this.HtmlPreviewForm_Load);
+            try
+            {
+                InitializeComponent();
+                this.Load += new EventHandler(this.HtmlPreviewForm_Load);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
         }
 
-        public HtmlPreviewForm(string htmlPath) : this()
+        public HtmlPreviewForm(String htmlPath) : this()
         {
-            _htmlPath = htmlPath;
-            //MessageBox.Show("HTML file found:\n" + _htmlPath);
+            try
+            {
+                this.htmlPath = htmlPath;
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
         }
 
-        private void HtmlPreviewForm_Load(object sender, EventArgs e)
+        private void HtmlPreviewForm_Load(Object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(_htmlPath))
+            try
             {
-                MessageBox.Show("HTML path is NULL or empty", "Error");
-                return;
+                if (String.IsNullOrEmpty(this.htmlPath))
+                {
+                    MessageBox.Show("HTML path is NULL or empty", "Error");
+                }
+                else
+                {
+                    this.ReportPreviewBrowser.Navigate(this.htmlPath);
+                }
             }
-
-            //MessageBox.Show("HTML file found:\n" + _htmlPath);
-            string readHtmlContent = string.Empty;
-            using (StreamReader streamReader = new StreamReader(_htmlPath))
+            catch (Exception ex)
             {
-                readHtmlContent = streamReader.ReadToEnd();
+                Utilities.HandleException(ex);
             }
-            ReportPreviewBrowser.DocumentText = readHtmlContent;
         }
 
         // Optional: Do something AFTER loading finishes
         private void ReportPreviewBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
-            this.Text = ReportPreviewBrowser.DocumentTitle;
+            try
+            {
+                this.Text = ReportPreviewBrowser.DocumentTitle;
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
         }
 
         private void btExportJson_Click(object sender, EventArgs e)
         {
+            try
+            {
 
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
         }
 
         private void btViewExternal_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(_htmlPath) && File.Exists(_htmlPath))
+            try
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                if (!String.IsNullOrEmpty(this.htmlPath) && File.Exists(this.htmlPath))
                 {
-                    FileName = _htmlPath,
-                    UseShellExecute = true   // IMPORTANT: required on Windows 10/11
-                });
+                    Process.Start(this.htmlPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
             }
         }
     }

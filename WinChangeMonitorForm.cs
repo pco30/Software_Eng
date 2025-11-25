@@ -8,9 +8,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Security;
 using System.ServiceProcess;
 using System.Text;
@@ -20,7 +18,6 @@ namespace WinChangeMonitor
 {
     public partial class WinChangeMonitorForm : Form
     {
-        private string generatedReportPath;
         public static SplashScreenForm SplashScreen { get; private set; }
 
         public Boolean ConfirmOnClose { get; set; } = true;
@@ -879,10 +876,7 @@ namespace WinChangeMonitor
                     this.postInstallServicesFinished = DateTime.Now;
                 }
 
-                this.generatedReportPath = this.sfdSaveReport.FileName;
                 GenerateIntallationReportHTML(this.sfdSaveReport.FileName);
-
-                //Process.Start(this.sfdSaveReport.FileName);
             }
             catch (Exception ex)
             {
@@ -894,9 +888,9 @@ namespace WinChangeMonitor
         {
             try
             {
-                if (!String.IsNullOrEmpty(this.generatedReportPath))
+                if (!String.IsNullOrEmpty(this.sfdSaveReport.FileName))
                 {
-                    HtmlPreviewForm preview = new HtmlPreviewForm(this.generatedReportPath);
+                    HtmlPreviewForm preview = new HtmlPreviewForm(this.sfdSaveReport.FileName);
                     preview.MinimumSize = this.MinimumSize;
                     preview.Show();
                 }
@@ -917,8 +911,6 @@ namespace WinChangeMonitor
             {
                 Utilities.HandleException(ex);
             }
-
-            
         }
 
         private void bwLoader_DoWork(Object sender, DoWorkEventArgs e)
@@ -1358,7 +1350,7 @@ namespace WinChangeMonitor
             }
         }
 
-        private void GenerateIntallationReportHTML(string htmlFile)
+        private void GenerateIntallationReportHTML(String htmlFile)
         {
             try
             {
