@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace WinChangeMonitor
 {
@@ -43,9 +44,11 @@ namespace WinChangeMonitor
             public class TrackedFolder
             {
                 [Key(0)]
+                [JsonInclude]
                 public String Folder { get; set; }
 
                 [Key(1)]
+                [JsonInclude]
                 public Boolean IncludeSubFolders { get; set; }
             }
 
@@ -53,6 +56,7 @@ namespace WinChangeMonitor
             public class FileSystemEntryInfo : IMessagePackSerializationCallbackReceiver
             {
                 [Key(0)]
+                [JsonInclude]
                 public Boolean IsFolder { get; set; }
 
                 public void OnBeforeSerialize()
@@ -124,9 +128,11 @@ namespace WinChangeMonitor
             public class TrackedKey
             {
                 [Key(0)]
+                [JsonInclude]
                 public String Key { get; set; }
 
                 [Key(1)]
+                [JsonInclude]
                 public Boolean IncludeSubKeys { get; set; }
             }
 

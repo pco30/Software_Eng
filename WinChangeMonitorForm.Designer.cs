@@ -53,7 +53,6 @@ namespace WinChangeMonitor
             this.olvFoldersToTrack = new BrightIdeasSoftware.ObjectListView();
             this.olvcFolder = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.olvcIncludeSubFolders = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
-            this.bStartFresh = new System.Windows.Forms.Button();
             this.bwPostInstall = new System.ComponentModel.BackgroundWorker();
             this.bwLoader = new System.ComponentModel.BackgroundWorker();
             this.tStatus = new System.Windows.Forms.Timer(this.components);
@@ -62,6 +61,7 @@ namespace WinChangeMonitor
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiStartFresh = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusBar = new System.Windows.Forms.StatusStrip();
@@ -104,7 +104,7 @@ namespace WinChangeMonitor
             // 
             // gbRegistryMonitor
             // 
-            this.gbRegistryMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.gbRegistryMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbRegistryMonitor.Controls.Add(this.bDefaultTrackedKeys);
             this.gbRegistryMonitor.Controls.Add(this.olvKeysToTrack);
@@ -134,8 +134,8 @@ namespace WinChangeMonitor
             // 
             this.olvKeysToTrack.AllColumns.Add(this.olvcKey);
             this.olvKeysToTrack.AllColumns.Add(this.olvcIncludeSubKeys);
-            this.olvKeysToTrack.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            this.olvKeysToTrack.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.olvKeysToTrack.CellEditUseWholeCell = false;
             this.olvKeysToTrack.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
@@ -241,7 +241,7 @@ namespace WinChangeMonitor
             // 
             // gbServicesMonitor
             // 
-            this.gbServicesMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.gbServicesMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbServicesMonitor.Controls.Add(this.cbServicesMonitor);
             this.gbServicesMonitor.Location = new System.Drawing.Point(12, 413);
@@ -304,7 +304,7 @@ namespace WinChangeMonitor
             // 
             // gbFileSystemMonitor
             // 
-            this.gbFileSystemMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.gbFileSystemMonitor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbFileSystemMonitor.Controls.Add(this.bDefaultTrackedFolders);
             this.gbFileSystemMonitor.Controls.Add(this.olvFoldersToTrack);
@@ -334,8 +334,8 @@ namespace WinChangeMonitor
             // 
             this.olvFoldersToTrack.AllColumns.Add(this.olvcFolder);
             this.olvFoldersToTrack.AllColumns.Add(this.olvcIncludeSubFolders);
-            this.olvFoldersToTrack.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            this.olvFoldersToTrack.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.olvFoldersToTrack.CellEditUseWholeCell = false;
             this.olvFoldersToTrack.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
@@ -403,18 +403,6 @@ namespace WinChangeMonitor
             this.olvcIncludeSubFolders.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.olvcIncludeSubFolders.UseFiltering = false;
             // 
-            // bStartFresh
-            // 
-            this.bStartFresh.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.bStartFresh.Enabled = false;
-            this.bStartFresh.Location = new System.Drawing.Point(672, 467);
-            this.bStartFresh.Name = "bStartFresh";
-            this.bStartFresh.Size = new System.Drawing.Size(107, 23);
-            this.bStartFresh.TabIndex = 8;
-            this.bStartFresh.Text = "Start Fresh";
-            this.bStartFresh.UseVisualStyleBackColor = true;
-            this.bStartFresh.Click += new System.EventHandler(this.bStartFresh_Click);
-            // 
             // bwPostInstall
             // 
             this.bwPostInstall.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bwPostInstall_DoWork);
@@ -460,7 +448,8 @@ namespace WinChangeMonitor
             // optionsToolStripMenuItem
             // 
             this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.settingsToolStripMenuItem});
+            this.settingsToolStripMenuItem,
+            this.tsmiStartFresh});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.optionsToolStripMenuItem.Text = "&Options";
@@ -470,6 +459,13 @@ namespace WinChangeMonitor
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
+            // 
+            // tsmiStartFresh
+            // 
+            this.tsmiStartFresh.Name = "tsmiStartFresh";
+            this.tsmiStartFresh.Size = new System.Drawing.Size(180, 22);
+            this.tsmiStartFresh.Text = "Start Fresh";
+            this.tsmiStartFresh.Click += new System.EventHandler(this.startFreshToolStripMenuItem_Click);
             // 
             // helpToolStripMenuItem
             // 
@@ -506,7 +502,6 @@ namespace WinChangeMonitor
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(791, 515);
             this.Controls.Add(this.statusBar);
-            this.Controls.Add(this.bStartFresh);
             this.Controls.Add(this.gbServicesMonitor);
             this.Controls.Add(this.gbRegistryMonitor);
             this.Controls.Add(this.bPostInstall);
@@ -552,7 +547,6 @@ namespace WinChangeMonitor
         private System.Windows.Forms.GroupBox gbFileSystemMonitor;
         private System.Windows.Forms.Button bAddKey;
         private System.Windows.Forms.Button bRemoveKey;
-        private System.Windows.Forms.Button bStartFresh;
         private System.ComponentModel.BackgroundWorker bwPostInstall;
         private System.ComponentModel.BackgroundWorker bwLoader;
         private System.Windows.Forms.Timer tStatus;
@@ -573,6 +567,7 @@ namespace WinChangeMonitor
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
         private System.Windows.Forms.Button bDefaultTrackedFolders;
         private System.Windows.Forms.Button bDefaultTrackedKeys;
+        private System.Windows.Forms.ToolStripMenuItem tsmiStartFresh;
     }
 }
 

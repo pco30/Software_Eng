@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security;
 using System.ServiceProcess;
 using System.Text;
@@ -37,6 +38,13 @@ namespace WinChangeMonitor
             { RegistryValueKind.QWord, "REG_QWORD" },
             { RegistryValueKind.String, "REG_SZ" }
         };
+
+        public SortedDictionary<String, Boolean> FolderContentsAdded { get { return this.folderContentsAdded; } }
+        public SortedDictionary<String, Boolean> FolderContentsModified { get { return this.folderContentsModified; } }
+        public SortedDictionary<String, RegistryEntryInfo> RegistryContentsAdded { get { return this.registryContentsAdded; } }
+        public SortedDictionary<String, RegistryEntryDiff> RegistryContentsModified { get { return this.registryContentsModified; } }
+        public SortedDictionary<String, ServiceInfo> ServicesAdded { get { return this.servicesAdded; } }
+        public SortedDictionary<String, ServiceDiff> ServicesModified {  get { return this.servicesModified; } }
 
         private DateTime loadStarted, loadFinished;
         private DateTime? preInstallFoldersStarted = null;
@@ -142,7 +150,7 @@ namespace WinChangeMonitor
                     this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
                     this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                     this.cbServicesMonitor.Enabled = false;
-                    this.bPostInstall.Enabled = this.bStartFresh.Enabled = false;
+                    this.bPostInstall.Enabled = this.tsmiStartFresh.Enabled = false;
 
                     this.tStatus.Start();
 
@@ -403,7 +411,7 @@ namespace WinChangeMonitor
             {
                 this.tStatus.Stop();
 
-                this.bPostInstall.Enabled = this.bStartFresh.Enabled = true;
+                this.bPostInstall.Enabled = this.tsmiStartFresh.Enabled = true;
 
                 this.tsslStatus.Text = "Pre-Install Inventory Complete";
             }
@@ -424,7 +432,7 @@ namespace WinChangeMonitor
                     this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
                     this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                     this.cbServicesMonitor.Enabled = false;
-                    this.bPreInstall.Enabled = this.bStartFresh.Enabled = false;
+                    this.bPreInstall.Enabled = this.tsmiStartFresh.Enabled = false;
 
                     this.bwPostInstall.RunWorkerAsync();
                 }
@@ -497,22 +505,38 @@ namespace WinChangeMonitor
 
                 if (result == DialogResult.Yes)
                 {
+                    Int32 oldIndex = this.olvFoldersToTrack.SelectedIndex;
+
                     RetainedSettings.FoldersToTrack.RemoveAt(this.olvFoldersToTrack.SelectedIndex);
 
                     this.olvFoldersToTrack.ClearObjects();
                     this.olvFoldersToTrack.AddObjects(RetainedSettings.FoldersToTrack);
 
-                    AutoSizeColumns(this.olvFoldersToTrack);
+                    AutoSizeColumns(this.olvFoldersToTrack); // the scrollbar may be visible now and column sizes need to consider that
 
-                    if (RetainedSettings.FoldersToTrack.Count == 0)
+                    this.olvFoldersToTrack.DeselectAll();
+
+                    if (RetainedSettings.FoldersToTrack.Count > 0)
+                    {
+                        if (oldIndex < RetainedSettings.FoldersToTrack.Count)
+                        {
+                            // an item before the last one was removed, select the new one at that position
+                            this.olvFoldersToTrack.Items[oldIndex].Selected = true;
+                        }
+                        else
+                        {
+                            // the last item was removed, select the new last one
+                            this.olvFoldersToTrack.Items[this.olvFoldersToTrack.Items.Count - 1].Selected = true;
+                        }
+
+                        this.olvFoldersToTrack.Focus();
+                    }
+                    else // RetainedSettings.FoldersToTrack.Count == 0
                     {
                         this.bRemoveFolder.Enabled = false;
 
                         this.bPreInstall.Enabled = (this.cbRegistryMonitor.Checked && RetainedSettings.KeysToTrack.Count > 0) || this.cbServicesMonitor.Checked;
                     }
-
-                    this.olvFoldersToTrack.SelectedItems.Clear();
-                    this.bRemoveFolder.Enabled = false;
                 }
             }
             catch (Exception ex)
@@ -529,60 +553,38 @@ namespace WinChangeMonitor
 
                 if (result == DialogResult.Yes)
                 {
+                    Int32 oldIndex = this.olvKeysToTrack.SelectedIndex;
+
                     RetainedSettings.KeysToTrack.RemoveAt(this.olvKeysToTrack.SelectedIndex);
 
                     this.olvKeysToTrack.ClearObjects();
                     this.olvKeysToTrack.AddObjects(RetainedSettings.KeysToTrack);
 
-                    AutoSizeColumns(this.olvKeysToTrack);
+                    AutoSizeColumns(this.olvKeysToTrack); // the scrollbar may be visible now and column sizes need to consider that
 
-                    if (RetainedSettings.KeysToTrack.Count == 0)
+                    this.olvKeysToTrack.DeselectAll();
+
+                    if (RetainedSettings.KeysToTrack.Count > 0)
                     {
+                        if (oldIndex < RetainedSettings.KeysToTrack.Count)
+                        {
+                            // an item before the last one was removed, select the new one at that position
+                            this.olvKeysToTrack.Items[oldIndex].Selected = true;
+                        }
+                        else
+                        {
+                            // the last one was removed, select the new last one
+                            this.olvKeysToTrack.Items[this.olvKeysToTrack.Items.Count - 1].Selected = true;
+                        }
+
+                        this.olvKeysToTrack.Focus();
+                    }
+                    else // RetainedSettings.KeysToTrack.Count == 0
+                    { 
                         this.bRemoveKey.Enabled = false;
 
                         this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked && RetainedSettings.FoldersToTrack.Count > 0) || this.cbServicesMonitor.Checked;
                     }
-
-                    this.olvKeysToTrack.SelectedItems.Clear();
-                    this.bRemoveKey.Enabled = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                Utilities.HandleException(ex);
-            }
-        }
-
-        private void bStartFresh_Click(Object sender, EventArgs e)
-        {
-            try
-            {
-                DialogResult result = MessageBox.Show("Are you sure you want to delete the existing inventory?", "Delete Inventory?", MessageBoxButtons.YesNo);
-
-                if (result == DialogResult.Yes)
-                {
-                    RetainedSettings.DeleteCommonInfo();
-
-                    RetainedSettings.DeleteFileSystemSettings();
-                    foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in this.olvFoldersToTrack.Objects)
-                    {
-                        RetainedSettings.FoldersToTrack.Add(folder);
-                    }
-
-                    RetainedSettings.DeleteRegistrySettings();
-                    foreach( RetainedSettings.RegistrySettings.TrackedKey key in this.olvKeysToTrack.Objects)
-                    {
-                        RetainedSettings.KeysToTrack.Add(key);
-                    }
-
-                    RetainedSettings.DeleteServicesSettings();
-
-                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled =  this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
-                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
-                    this.cbServicesMonitor.Enabled = true;
-
-                    this.bPreInstall.Enabled = true;
-                    this.bPostInstall.Enabled = this.bStartFresh.Enabled = false;
                 }
             }
             catch (Exception ex)
@@ -888,24 +890,26 @@ namespace WinChangeMonitor
         {
             try
             {
+                // the report generation only works correctly if sfdSaveReport.FileName is valid, otherwise do nothing
                 if (!String.IsNullOrEmpty(this.sfdSaveReport.FileName))
                 {
-                    HtmlPreviewForm preview = new HtmlPreviewForm(this.sfdSaveReport.FileName);
+                    HtmlPreviewForm preview = new HtmlPreviewForm(this, this.sfdSaveReport.FileName);
                     preview.MinimumSize = this.MinimumSize;
-                    preview.Show();
+                    // this needs to be .ShowDialog() (a blocking call) so the following RetainedSettings.Delete...() methods are not run until the form is closed (HTMLPreviewForm's 'Export as JSON' functionality requires some of the RetainedSettngs)
+                    preview.ShowDialog();
+
+                    RetainedSettings.DeleteCommonInfo();
+                    RetainedSettings.DeleteFileSystemSettings();
+                    RetainedSettings.DeleteRegistrySettings();
+                    RetainedSettings.DeleteServicesSettings();
+
+                    this.tsslStatus.Text = "";
+
+                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = true;
+                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = true;
+                    this.cbServicesMonitor.Enabled = true;
+                    this.bPreInstall.Enabled = true;
                 }
-
-                this.tsslStatus.Text = "";
-
-                RetainedSettings.DeleteCommonInfo();
-                RetainedSettings.DeleteFileSystemSettings();
-                RetainedSettings.DeleteRegistrySettings();
-                RetainedSettings.DeleteServicesSettings();
-
-                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = true;
-                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = true;
-                this.cbServicesMonitor.Enabled = true;
-                this.bPreInstall.Enabled = true;
             }
             catch (Exception ex)
             {
@@ -1860,6 +1864,37 @@ namespace WinChangeMonitor
             }
         }
 
+        private void startFreshToolStripMenuItem_Click(Object sender, EventArgs e)
+        {
+            DialogResult result = MessageBox.Show("Are you sure you want to delete the existing inventory?", "Delete Inventory?", MessageBoxButtons.YesNo);
+
+            if (result == DialogResult.Yes)
+            {
+                RetainedSettings.DeleteCommonInfo();
+
+                RetainedSettings.DeleteFileSystemSettings();
+                foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in this.olvFoldersToTrack.Objects)
+                {
+                    RetainedSettings.FoldersToTrack.Add(folder);
+                }
+
+                RetainedSettings.DeleteRegistrySettings();
+                foreach (RetainedSettings.RegistrySettings.TrackedKey key in this.olvKeysToTrack.Objects)
+                {
+                    RetainedSettings.KeysToTrack.Add(key);
+                }
+
+                RetainedSettings.DeleteServicesSettings();
+
+                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
+                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
+                this.cbServicesMonitor.Enabled = true;
+
+                this.bPreInstall.Enabled = true;
+                this.bPostInstall.Enabled = this.tsmiStartFresh.Enabled = false;
+            }
+        }
+
         private void tStatus_Tick(Object sender, EventArgs e)
         {
             try
@@ -1915,6 +1950,8 @@ namespace WinChangeMonitor
                     this.cbServicesMonitor.Checked = true;
 
                     this.bPreInstall.Enabled = true;
+                    this.bPostInstall.Enabled = false;
+                    this.tsmiStartFresh.Enabled = false;
                 }
                 else // a previous inventory exists
                 {
@@ -1955,7 +1992,7 @@ namespace WinChangeMonitor
 
                     this.bPreInstall.Enabled = false;
                     this.bPostInstall.Enabled = true;
-                    this.bStartFresh.Enabled = true;
+                    this.tsmiStartFresh.Enabled = true;
                 }
 
                 this.olvFoldersToTrack.AddObjects(RetainedSettings.FoldersToTrack);

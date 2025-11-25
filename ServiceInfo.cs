@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ServiceProcess;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace WinChangeMonitor
 {
@@ -10,27 +11,35 @@ namespace WinChangeMonitor
     public class ServiceInfo : IMessagePackSerializationCallbackReceiver
     {
         [Key(0)]
+        [JsonInclude]
         public Boolean CanPauseAndContinue { get; set; }
 
         [Key(1)]
+        [JsonInclude]
         public Boolean CanShutdown { get; set; }
 
         [Key(2)]
+        [JsonInclude]
         public Boolean CanStop { get; set; }
 
         [Key(3)]
+        [JsonInclude]
         public String DisplayName { get; set; }
 
         [Key(4)]
+        [JsonInclude]
         public HashSet<String> ServiceNamesDependedOn { get; set; }
 
         [Key(5)]
+        [JsonInclude]
         public ServiceType ServiceType { get; set; }
 
         [Key(6)]
+        [JsonInclude]
         public ServiceStartMode StartType { get; set; }
 
         [IgnoreMember]
+        [JsonIgnore]
         private StringBuilder printableNamesDependedOn = null;
 
         public static ServiceInfo Parse(ServiceController service)
@@ -87,9 +96,12 @@ namespace WinChangeMonitor
         }
     }
 
-    internal class ServiceDiff
+    public class ServiceDiff
     {
+        [JsonInclude]
         public ServiceInfo Initial { get; private set; }
+
+        [JsonInclude]
         public ServiceInfo Current { get; private set; }
 
         public ServiceDiff(ServiceInfo initial, ServiceInfo current)
