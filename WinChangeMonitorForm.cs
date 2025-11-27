@@ -13,6 +13,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security;
 using System.ServiceProcess;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace WinChangeMonitor
@@ -36,7 +37,9 @@ namespace WinChangeMonitor
             { RegistryValueKind.ExpandString, "REG_EXPAND_SZ" },
             { RegistryValueKind.MultiString, "REG_MULTI_SZ" },
             { RegistryValueKind.QWord, "REG_QWORD" },
-            { RegistryValueKind.String, "REG_SZ" }
+            { RegistryValueKind.String, "REG_SZ" },
+            { RegistryValueKind.None, "N/A"},
+            { RegistryValueKind.Unknown, "N/A" }
         };
 
         public SortedDictionary<String, Boolean> FolderContentsAdded { get { return this.folderContentsAdded; } }
@@ -145,6 +148,8 @@ namespace WinChangeMonitor
             {
                 if (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked)
                 {
+                    this.Cursor = Cursors.WaitCursor;
+
                     this.bPreInstall.Enabled = false;
 
                     this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
@@ -352,7 +357,7 @@ namespace WinChangeMonitor
                 {   
                     this.preInstallFoldersStarted = DateTime.Now;
 
-                    this.operation = "Performing File System Inventory";
+                    this.operation = "Performing Pre-Install File System Inventory";
 
                     foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in RetainedSettings.FoldersToTrack)
                     {
@@ -370,7 +375,7 @@ namespace WinChangeMonitor
 
                     RegistryKey key;
 
-                    this.operation = "Performing Registry Inventory";
+                    this.operation = "Performing Pre-Install Registry Inventory";
 
                     foreach (RetainedSettings.RegistrySettings.TrackedKey registryKey in RetainedSettings.KeysToTrack)
                     {
@@ -388,7 +393,7 @@ namespace WinChangeMonitor
                 {
                     this.preInstallServicesStarted = DateTime.Now;
 
-                    this.operation = "Performing Services Inventory";
+                    this.operation = "Performing Pre-Install Services Inventory";
 
                     PreInstallInventoryServices();
 
@@ -414,6 +419,8 @@ namespace WinChangeMonitor
                 this.bPostInstall.Enabled = this.tsmiStartFresh.Enabled = true;
 
                 this.tsslStatus.Text = "Pre-Install Inventory Complete";
+
+                this.Cursor = Cursors.Default;
             }
             catch (Exception ex)
             {
@@ -427,12 +434,16 @@ namespace WinChangeMonitor
             {
                 if (this.sfdSaveReport.ShowDialog() == DialogResult.OK)
                 {
+                    this.Cursor = Cursors.WaitCursor;
+
                     this.bPostInstall.Enabled = false;
 
                     this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
                     this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                     this.cbServicesMonitor.Enabled = false;
                     this.bPreInstall.Enabled = this.tsmiStartFresh.Enabled = false;
+
+                    this.tStatus.Start();
 
                     this.bwPostInstall.RunWorkerAsync();
                 }
@@ -648,7 +659,6 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.operation = "Performing File System Inventory";
                 this.current = directory;
 
                 try
@@ -718,7 +728,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.tsslStatus.Text = key.ToString();
+                this.current = key.ToString();
 
                 String[] valueNames = key.GetValueNames();
 
@@ -793,7 +803,7 @@ namespace WinChangeMonitor
 
                 foreach (ServiceController service in services)
                 {
-                    this.tsslStatus.Text = service.ServiceName;
+                    this.current = service.ServiceName;
 
                     if (!RetainedSettings.ServicesInventory.ContainsKey(service.ServiceName))
                     {
@@ -843,6 +853,8 @@ namespace WinChangeMonitor
             {
                 if (this.cbFileSystemMonitor.Checked)
                 {
+                    this.operation = "Performing Post-Install File System Inventory";
+
                     this.postInstallFoldersStarted = DateTime.Now;
 
                     foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in RetainedSettings.FoldersToTrack)
@@ -855,6 +867,8 @@ namespace WinChangeMonitor
 
                 if (this.cbRegistryMonitor.Checked)
                 {
+                    this.operation = "Performing Pre-Install Registry Inventory";
+
                     this.postInstallRegistryStarted = DateTime.Now;
 
                     RegistryKey key;
@@ -871,12 +885,16 @@ namespace WinChangeMonitor
 
                 if (this.cbServicesMonitor.Checked)
                 {
+                    this.operation = "Performing Pre-Install Services Inventory";
+
                     this.postInstallServicesStarted = DateTime.Now;
 
                     PostInstallInventoryServices();
 
                     this.postInstallServicesFinished = DateTime.Now;
                 }
+
+                this.operation = "Generating Report";
 
                 GenerateIntallationReportHTML(this.sfdSaveReport.FileName);
             }
@@ -893,10 +911,11 @@ namespace WinChangeMonitor
                 // the report generation only works correctly if sfdSaveReport.FileName is valid, otherwise do nothing
                 if (!String.IsNullOrEmpty(this.sfdSaveReport.FileName))
                 {
+                    this.tStatus.Stop();
+
                     HtmlPreviewForm preview = new HtmlPreviewForm(this, this.sfdSaveReport.FileName);
                     preview.MinimumSize = this.MinimumSize;
-                    // this needs to be .ShowDialog() (a blocking call) so the following RetainedSettings.Delete...() methods are not run until the form is closed (HTMLPreviewForm's 'Export as JSON' functionality requires some of the RetainedSettngs)
-                    preview.ShowDialog();
+                    preview.ShowDialog(); // this needs to be .ShowDialog() (a blocking call) so the following RetainedSettings.Delete...() methods are not run until the form is closed (HTMLPreviewForm's 'Export as JSON' functionality requires some of the RetainedSettngs)
 
                     RetainedSettings.DeleteCommonInfo();
                     RetainedSettings.DeleteFileSystemSettings();
@@ -909,6 +928,8 @@ namespace WinChangeMonitor
                     this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = true;
                     this.cbServicesMonitor.Enabled = true;
                     this.bPreInstall.Enabled = true;
+
+                    this.Cursor = Cursors.Default;
                 }
             }
             catch (Exception ex)

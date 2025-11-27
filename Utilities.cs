@@ -155,6 +155,10 @@ namespace WinChangeMonitor
         {
             try
             {
+                if (value == null)
+                {
+                    return String.Empty;
+                }
                 StringBuilder sb = new StringBuilder();
                 String[] split = value.Split((Char)0); // handle REG_MULTI_SZ where (Char)0 is the delimiter
                 foreach (String s in split)
