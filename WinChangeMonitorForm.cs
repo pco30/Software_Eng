@@ -5,15 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security;
 using System.ServiceProcess;
 using System.Text;
-using System.Threading;
 using System.Windows.Forms;
 
 namespace WinChangeMonitor
@@ -1468,7 +1465,23 @@ namespace WinChangeMonitor
 
                         writer.WriteLine("<h3 id=\"file_system_added\">File System Contents Added</h3>");
 
-                        if (this.folderContentsAdded.Count == 0)
+                        StringBuilder sb = new StringBuilder();
+
+                        UInt64 count = 1;
+                        foreach (KeyValuePair<String, Boolean> addedItem in this.folderContentsAdded)
+                        {
+                            if (!this.ignoreToolStripMenuItem.Checked || !addedItem.Key.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                sb.AppendLine("<tr>");
+                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
+                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(addedItem.Value ? "Folder" : "File")}</td>");
+                                sb.AppendLine("</tr>");
+                                ++count;
+                            }
+                        }
+
+                        if (sb.Length == 0)
                         {
                             writer.WriteLine("<div>Nothing was added</div>");
                         }
@@ -1480,22 +1493,29 @@ namespace WinChangeMonitor
                             writer.WriteLine("<th>Name</th>");
                             writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
                             writer.WriteLine("</tr>");
-                            UInt64 count = 1;
-                            foreach (KeyValuePair<String, Boolean> addedItem in this.folderContentsAdded)
-                            {
-                                writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td>{count}</td>");
-                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
-                                writer.WriteLine($"<td>{(addedItem.Value ? "Folder" : "File")}</td>");
-                                writer.WriteLine("</tr>");
-                                ++count;
-                            }
+                            writer.WriteLine(sb.ToString());
                             writer.WriteLine("</table>");
                         }
 
                         writer.WriteLine("<h3 id=\"file_system_modified\">File System Contents Modified</h3>");
 
-                        if (this.folderContentsModified.Count == 0)
+                        sb = new StringBuilder();
+
+                        count = 1;
+                        foreach (KeyValuePair<String, Boolean> modifiedItem in this.folderContentsModified)
+                        {
+                            if (!this.ignoreToolStripMenuItem.Checked || !modifiedItem.Key.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                sb.AppendLine("<tr>");
+                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
+                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value ? "Folder" : "File")}</td>");
+                                sb.AppendLine("</tr>");
+                                ++count;
+                            }
+                        }
+
+                        if (sb.Length == 0)
                         {
                             writer.WriteLine("<div>Nothing was modified</div>");
                         }
@@ -1507,22 +1527,28 @@ namespace WinChangeMonitor
                             writer.WriteLine("<th>Name</th>");
                             writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
                             writer.WriteLine("</tr>");
-                            UInt64 count = 1;
-                            foreach (KeyValuePair<String, Boolean> modifiedItem in this.folderContentsModified)
-                            {
-                                writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td>{count}</td>");
-                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
-                                writer.WriteLine($"<td>{(modifiedItem.Value ? "Folder" : "File")}</td>");
-                                writer.WriteLine("</tr>");
-                                ++count;
-                            }
+                            writer.WriteLine(sb.ToString());
                             writer.WriteLine("</table>");
                         }
 
                         writer.WriteLine("<h3 id=\"file_system_removed\">File System Contents Removed</h3>");
 
-                        if (RetainedSettings.FileSystemInventory.Count == 0)
+                        sb = new StringBuilder();
+
+                        count = 1;
+                        foreach (KeyValuePair<String, RetainedSettings.FileSystemSettings.FileSystemEntryInfo> removedItem in RetainedSettings.FileSystemInventory)
+                        {
+                            if (!this.ignoreToolStripMenuItem.Checked || !removedItem.Key.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                sb.AppendLine("<tr>");
+                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                sb.AppendLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</td>");
+                                sb.AppendLine($"<td><i>{WebUtility.HtmlEncode(removedItem.Value.IsFolder ? "Folder" : "File")}</i></td>");
+                                sb.AppendLine("</tr>");
+                            }
+                        }
+
+                        if (sb.Length == 0)
                         {
                             writer.WriteLine("<div>Nothing was removed</div>");
                         }
@@ -1534,15 +1560,7 @@ namespace WinChangeMonitor
                             writer.WriteLine("<th>Name</th>");
                             writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
                             writer.WriteLine("</tr>");
-                            UInt64 count = 1;
-                            foreach (KeyValuePair<String, RetainedSettings.FileSystemSettings.FileSystemEntryInfo> removedItem in RetainedSettings.FileSystemInventory)
-                            {
-                                writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td>{count}</td>");
-                                writer.WriteLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</td>");
-                                writer.WriteLine($"<td><i>{(removedItem.Value.IsFolder ? "Folder" : "File")}</i></td>");
-                                writer.WriteLine("</tr>");
-                            }
+                            writer.WriteLine(sb.ToString());
                             writer.WriteLine("</table>");
                         }
                     }
@@ -1586,7 +1604,7 @@ namespace WinChangeMonitor
                             foreach (KeyValuePair<String, RegistryEntryInfo> addedItem in this.registryContentsAdded)
                             {
                                 writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td>{count}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
                                 writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
 
                                 if (addedItem.Value == null)
@@ -1627,7 +1645,7 @@ namespace WinChangeMonitor
                             foreach (KeyValuePair<String, RegistryEntryDiff> modifiedItem in this.registryContentsModified)
                             {
                                 writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td rowspan=\"2\">{count}</td>");
+                                writer.WriteLine($"<td rowspan=\"2\">{WebUtility.HtmlEncode(count.ToString())}</td>");
                                 writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
 
                                 if (modifiedItem.Value == null) // this isn't really possible to modify a registry key (renaming it would report the original key as deleted and the renamed key as new)
@@ -1683,7 +1701,7 @@ namespace WinChangeMonitor
                             foreach (KeyValuePair<String, RegistryEntryInfo> removedItem in RetainedSettings.RegistryInventory)
                             {
                                 writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td>{count}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
                                 writer.WriteLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</i></td>");
 
                                 if (removedItem.Value == null)
@@ -1739,19 +1757,19 @@ namespace WinChangeMonitor
                                 
                                 ServiceInfo s = addedItem.Value; // allows "s." to get properties instead of "addedItem.Value."
                                 writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td>{count}</td>");
-                                writer.WriteLine($"<td id=\"name-td\">{addedItem.Key}</td>");
-                                writer.WriteLine($"<td>{s.CanPauseAndContinue}</td>");
-                                writer.WriteLine($"<td>{s.CanShutdown}</td>");
-                                writer.WriteLine($"<td>{s.CanStop}</td>");
-                                writer.WriteLine($"<td>{s.DisplayName}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.CanPauseAndContinue.ToString())}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.CanShutdown.ToString())}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.CanStop.ToString())}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.DisplayName.ToString())}</td>");
                                 writer.WriteLine("<td>");
                                 foreach (String serviceNameDependedOn in s.ServiceNamesDependedOn)
                                 {
-                                    writer.WriteLine($"<div>{serviceNameDependedOn}</div>");
+                                    writer.WriteLine($"<div>{WebUtility.HtmlEncode(serviceNameDependedOn)}</div>");
                                 }
                                 writer.WriteLine("</td>");
-                                writer.WriteLine($"<td>{s.StartType}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.StartType.ToString())}</td>");
                                 writer.WriteLine("</tr>");
 
                                 ++count;
@@ -1784,40 +1802,40 @@ namespace WinChangeMonitor
                             foreach (KeyValuePair<String, ServiceDiff> modifiedItem in this.servicesModified)
                             {
                                 writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td rowspan=\"2\">{count}</td>");
-                                writer.WriteLine($"<td id=\"name-td\">{modifiedItem.Key}</td>");
+                                writer.WriteLine($"<td rowspan=\"2\">{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
                                 ServiceInfo curr = modifiedItem.Value.Current; // allows "curr." to get Current properties instead of "modifiedItem.Value.Current."
-                                writer.WriteLine($"<td>{curr.CanPauseAndContinue}</td>");
-                                writer.WriteLine($"<td>{curr.CanShutdown}</td>");
-                                writer.WriteLine($"<td>{curr.CanStop}</td>");
-                                writer.WriteLine($"<td>{curr.DisplayName}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.CanPauseAndContinue.ToString())}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.CanShutdown.ToString())}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.CanStop.ToString())}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.DisplayName)}</td>");
                                 writer.WriteLine("<td>");
                                 foreach (String serviceNameDependedOn in curr.ServiceNamesDependedOn)
                                 {
-                                    writer.WriteLine($"<div>{serviceNameDependedOn}</div>");
+                                    writer.WriteLine($"<div>{WebUtility.HtmlEncode(serviceNameDependedOn)}</div>");
                                 }
                                 writer.WriteLine("</td>");
-                                writer.WriteLine($"<td>{curr.ServiceType}</td>");
-                                writer.WriteLine($"<td>{curr.StartType}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.ServiceType.ToString())}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.StartType.ToString())}</td>");
                                 writer.WriteLine("</tr>");
                                 writer.WriteLine($"<tr>");
                                 writer.WriteLine("<td><i>(original if different)</i></td>");
                                 ServiceInfo init = modifiedItem.Value.Initial; //allows "init." to get Initial properties instead of "modifiedItem.Value.Initial."
-                                writer.WriteLine($"<td><i>{(curr.CanPauseAndContinue != init.CanPauseAndContinue ? init.CanPauseAndContinue.ToString() : "")}</i></td>");
-                                writer.WriteLine($"<td><i>{(curr.CanShutdown != init.CanShutdown ? init.CanShutdown.ToString() : "")}</i></td>");
-                                writer.WriteLine($"<td><i>{(curr.CanStop != init.CanStop ? init.CanStop.ToString() : "")}</i></td>");
-                                writer.WriteLine($"<td><i>{(curr.DisplayName != init.DisplayName ? init.DisplayName : "")}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.CanPauseAndContinue != init.CanPauseAndContinue ? init.CanPauseAndContinue.ToString() : "")}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.CanShutdown != init.CanShutdown ? init.CanShutdown.ToString() : "")}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.CanStop != init.CanStop ? init.CanStop.ToString() : "")}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.DisplayName != init.DisplayName ? init.DisplayName : "")}</i></td>");
                                 writer.WriteLine("<td>");
                                 if (!curr.ServiceNamesDependedOn.SetEquals(init.ServiceNamesDependedOn))
                                 {
                                     foreach(String serviceNameDependedOn in init.ServiceNamesDependedOn)
                                     {
-                                        writer.WriteLine($"<div><i>{serviceNameDependedOn}</i></div>");
+                                        writer.WriteLine($"<div><i>{WebUtility.HtmlEncode(serviceNameDependedOn)}</i></div>");
                                     }
                                 }
                                 writer.WriteLine("</td>");
-                                writer.WriteLine($"<td><i>{(curr.ServiceType != init.ServiceType ? init.ServiceType.ToString() : "")}</i></td>");
-                                writer.WriteLine($"<td><i>{(curr.StartType != init.StartType ? init.StartType.ToString() : "")}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.ServiceType != init.ServiceType ? init.ServiceType.ToString() : "")}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.StartType != init.StartType ? init.StartType.ToString() : "")}</i></td>");
                                 writer.WriteLine("</tr>");
 
                                 ++count;
@@ -1850,22 +1868,22 @@ namespace WinChangeMonitor
                             foreach (KeyValuePair<String, ServiceInfo> removedItem in RetainedSettings.ServicesInventory)
                             {
                                 writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td>{count}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
 
                                 ServiceInfo s = removedItem.Value; // allows "s." to get properties instead of "removedItem.Value."
-                                writer.WriteLine($"<td id=\"name-td\"><i>{removedItem.Key}</i></td>");
-                                writer.WriteLine($"<td><i>{s.CanPauseAndContinue}</i></td>");
-                                writer.WriteLine($"<td><i>{s.CanShutdown}</i></td>");
-                                writer.WriteLine($"<td><i>{s.CanStop}</i></td>");
-                                writer.WriteLine($"<td><i>{s.DisplayName}</i></td>");
+                                writer.WriteLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.CanPauseAndContinue.ToString())}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.CanShutdown.ToString())}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.CanStop.ToString())}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.DisplayName)}</i></td>");
                                 writer.WriteLine("<td>");
                                 foreach (String serviceNameDependedOn in s.ServiceNamesDependedOn)
                                 {
-                                    writer.WriteLine($"<div><i>{serviceNameDependedOn}</i></div>");
+                                    writer.WriteLine($"<div><i>{WebUtility.HtmlEncode(serviceNameDependedOn)}</i></div>");
                                 }
                                 writer.WriteLine("</td>");
-                                writer.WriteLine($"<td><i>{s.ServiceType}</i></td>");
-                                writer.WriteLine($"<td><i>{s.StartType}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.ServiceType.ToString())}</i></td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.StartType.ToString())}</i></td>");
                                 writer.WriteLine("</tr>");
 
                                 ++count;
@@ -1907,8 +1925,8 @@ namespace WinChangeMonitor
 
                 RetainedSettings.DeleteServicesSettings();
 
-                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = true;
-                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = true;
+                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = true;
+                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = true;
                 this.cbServicesMonitor.Enabled = true;
 
                 this.bPreInstall.Enabled = true;

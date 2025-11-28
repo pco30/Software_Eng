@@ -60,12 +60,13 @@ namespace WinChangeMonitor
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ignoreToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiStartFresh = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusBar = new System.Windows.Forms.StatusStrip();
             this.tsslStatus = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.gbRegistryMonitor.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.olvKeysToTrack)).BeginInit();
             this.gbServicesMonitor.SuspendLayout();
@@ -443,6 +444,7 @@ namespace WinChangeMonitor
             // 
             // exitToolStripMenuItem
             // 
+            this.exitToolStripMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.exitToolStripMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.exitToolStripMenuItem.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
@@ -455,21 +457,25 @@ namespace WinChangeMonitor
             this.optionsToolStripMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.optionsToolStripMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.settingsToolStripMenuItem,
+            this.ignoreToolStripMenuItem,
+            this.toolStripSeparator1,
             this.tsmiStartFresh});
             this.optionsToolStripMenuItem.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.optionsToolStripMenuItem.Text = "&Options";
             // 
-            // settingsToolStripMenuItem
+            // ignoreToolStripMenuItem
             // 
-            this.settingsToolStripMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.settingsToolStripMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.settingsToolStripMenuItem.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.settingsToolStripMenuItem.Text = "Settings";
+            this.ignoreToolStripMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.ignoreToolStripMenuItem.Checked = true;
+            this.ignoreToolStripMenuItem.CheckOnClick = true;
+            this.ignoreToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.ignoreToolStripMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.ignoreToolStripMenuItem.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+            this.ignoreToolStripMenuItem.Name = "ignoreToolStripMenuItem";
+            this.ignoreToolStripMenuItem.Size = new System.Drawing.Size(218, 22);
+            this.ignoreToolStripMenuItem.Text = "Ignore Unnecessary Folders";
             // 
             // tsmiStartFresh
             // 
@@ -477,7 +483,7 @@ namespace WinChangeMonitor
             this.tsmiStartFresh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.tsmiStartFresh.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
             this.tsmiStartFresh.Name = "tsmiStartFresh";
-            this.tsmiStartFresh.Size = new System.Drawing.Size(180, 22);
+            this.tsmiStartFresh.Size = new System.Drawing.Size(218, 22);
             this.tsmiStartFresh.Text = "Start Fresh";
             this.tsmiStartFresh.Click += new System.EventHandler(this.startFreshToolStripMenuItem_Click);
             // 
@@ -515,6 +521,11 @@ namespace WinChangeMonitor
             // 
             this.tsslStatus.Name = "tsslStatus";
             this.tsslStatus.Size = new System.Drawing.Size(0, 17);
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(215, 6);
             // 
             // WinChangeMonitorForm
             // 
@@ -584,10 +595,11 @@ namespace WinChangeMonitor
         private BrightIdeasSoftware.ObjectListView olvKeysToTrack;
         private BrightIdeasSoftware.OLVColumn olvcKey;
         private BrightIdeasSoftware.OLVColumn olvcIncludeSubKeys;
-        private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ignoreToolStripMenuItem;
         private System.Windows.Forms.Button bDefaultTrackedFolders;
         private System.Windows.Forms.Button bDefaultTrackedKeys;
         private System.Windows.Forms.ToolStripMenuItem tsmiStartFresh;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
     }
 }
 
