@@ -8,10 +8,12 @@ using System.ComponentModel;
 using System.Configuration;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security;
 using System.ServiceProcess;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace WinChangeMonitor
@@ -153,6 +155,12 @@ namespace WinChangeMonitor
                     this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                     this.cbServicesMonitor.Enabled = false;
                     this.bPreInstall.Enabled = this.bPostInstall.Enabled = false;
+
+                    if (this.ignoreToolStripMenuItem.Checked)
+                    {
+                        String setting = ConfigurationManager.AppSettings["ignoredFileSystemPatterns"];
+                        RetainedSettings.IgnoredFileSystemPatterns = (setting != null ? setting.Split('|').ToList() : new List<String>());
+                    }
 
                     this.tStatus.Start();
 
@@ -897,7 +905,9 @@ namespace WinChangeMonitor
                     this.postInstallServicesFinished = DateTime.Now;
                 }
 
-                this.operation = "Generating Report";
+                this.tStatus.Stop();
+
+                this.tsslStatus.Text = "Generating Report";
 
                 GenerateIntallationReportHTML(this.sfdSaveReport.FileName);
 
@@ -908,8 +918,6 @@ namespace WinChangeMonitor
                     preview = new HtmlPreviewForm(this, this.sfdSaveReport.FileName);
                     preview.MinimumSize = this.MinimumSize;
                     preview.ShowDialog(); // this needs to be .ShowDialog() (a blocking call) so the RetainedSettings.Delete...() methods in RunWorkerCompleted are not run until the form is closed (HTMLPreviewForm's 'Export as JSON' functionality requires some of the RetainedSettngs)
-
-                    this.tStatus.Stop();
 
                     RetainedSettings.DeleteCommonInfo();
                     RetainedSettings.DeleteFileSystemSettings();
@@ -927,6 +935,8 @@ namespace WinChangeMonitor
         {
             try
             {
+                this.tStatus.Stop();
+
                 this.tsslStatus.Text = "";
 
                 this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = true;
@@ -1379,6 +1389,27 @@ namespace WinChangeMonitor
             }
         }
 
+        private static Boolean MatchesIgnoredPattern(String path, List<String> ignoredPatterns)
+        {
+            try
+            {
+                foreach (String ignoredPattern in ignoredPatterns)
+                {
+                    if (Regex.IsMatch(path, ignoredPattern))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+                throw;
+            }
+        }
+
         private void GenerateIntallationReportHTML(String htmlFile)
         {
             try
@@ -1464,11 +1495,27 @@ namespace WinChangeMonitor
                         foreach (RetainedSettings.FileSystemSettings.TrackedFolder trackedFolder in RetainedSettings.FoldersToTrack)
                         {
                             writer.WriteLine("<tr>");
-                            writer.WriteLine($"<td>{trackedFolder.Folder}</td>");
-                            writer.WriteLine($"<td>{(trackedFolder.IncludeSubFolders ? "Yes" : "No")}</td>");
+                            writer.WriteLine($"<td>{WebUtility.HtmlEncode(trackedFolder.Folder)}</td>");
+                            writer.WriteLine($"<td>{WebUtility.HtmlEncode(trackedFolder.IncludeSubFolders ? "Yes" : "No")}</td>");
                             writer.WriteLine("</tr>");
                         }
                         writer.WriteLine("</table>");
+
+                        if (this.ignoreToolStripMenuItem.Checked && RetainedSettings.IgnoredFileSystemPatterns.Count > 0)
+                        {
+                            writer.WriteLine("<h3>Ignored File System Contents</h3>");
+                            writer.WriteLine("<table>");
+                            writer.WriteLine("<tr>");
+                            writer.WriteLine("<th>Pattern</th>");
+                            writer.WriteLine("</tr>");
+                            foreach (String pattern in RetainedSettings.IgnoredFileSystemPatterns)
+                            {
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(pattern)}</td>");
+                                writer.WriteLine("</tr>");
+                            }
+                            writer.WriteLine("</table>");
+                        }
 
                         writer.WriteLine("<h3 id=\"file_system_added\">File System Contents Added</h3>");
 
@@ -1477,12 +1524,15 @@ namespace WinChangeMonitor
                         UInt64 count = 1;
                         foreach (KeyValuePair<String, Boolean> addedItem in this.folderContentsAdded)
                         {
-                            sb.AppendLine("<tr>");
-                            sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                            sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
-                            sb.AppendLine($"<td>{WebUtility.HtmlEncode(addedItem.Value ? "Folder" : "File")}</td>");
-                            sb.AppendLine("</tr>");
-                            ++count;
+                            if (!this.ignoreToolStripMenuItem.Checked || !MatchesIgnoredPattern(addedItem.Key, RetainedSettings.IgnoredFileSystemPatterns))
+                            {
+                                sb.AppendLine("<tr>");
+                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
+                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(addedItem.Value ? "Folder" : "File")}</td>");
+                                sb.AppendLine("</tr>");
+                                ++count;
+                            }
                         }
 
                         if (sb.Length == 0)
@@ -1508,12 +1558,15 @@ namespace WinChangeMonitor
                         count = 1;
                         foreach (KeyValuePair<String, Boolean> modifiedItem in this.folderContentsModified)
                         {
-                            sb.AppendLine("<tr>");
-                            sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                            sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
-                            sb.AppendLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value ? "Folder" : "File")}</td>");
-                            sb.AppendLine("</tr>");
-                            ++count;
+                            if (!this.ignoreToolStripMenuItem.Checked || !MatchesIgnoredPattern(modifiedItem.Key, RetainedSettings.IgnoredFileSystemPatterns))
+                            {
+                                sb.AppendLine("<tr>");
+                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
+                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value ? "Folder" : "File")}</td>");
+                                sb.AppendLine("</tr>");
+                                ++count;
+                            }
                         }
 
                         if (sb.Length == 0)
@@ -1539,11 +1592,14 @@ namespace WinChangeMonitor
                         count = 1;
                         foreach (KeyValuePair<String, RetainedSettings.FileSystemSettings.FileSystemEntryInfo> removedItem in RetainedSettings.FileSystemInventory)
                         {
-                            sb.AppendLine("<tr>");
-                            sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                            sb.AppendLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</td>");
-                            sb.AppendLine($"<td><i>{WebUtility.HtmlEncode(removedItem.Value.IsFolder ? "Folder" : "File")}</i></td>");
-                            sb.AppendLine("</tr>");
+                            if (!this.ignoreToolStripMenuItem.Checked || !MatchesIgnoredPattern(removedItem.Key, RetainedSettings.IgnoredFileSystemPatterns))
+                            {
+                                sb.AppendLine("<tr>");
+                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                sb.AppendLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</td>");
+                                sb.AppendLine($"<td><i>{WebUtility.HtmlEncode(removedItem.Value.IsFolder ? "Folder" : "File")}</i></td>");
+                                sb.AppendLine("</tr>");
+                            }
                         }
 
                         if (sb.Length == 0)

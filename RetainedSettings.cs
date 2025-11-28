@@ -74,9 +74,12 @@ namespace WinChangeMonitor
             public List<TrackedFolder> FoldersToTrack = new List<TrackedFolder>();
 
             [Key(1)]
-            public DateTime? PreInstallFinished = null;
+            public List<String> IgnoredPatterns = null;
 
             [Key(2)]
+            public DateTime? PreInstallFinished = null;
+
+            [Key(3)]
             public SortedDictionary<String, FileSystemEntryInfo> Inventory = new SortedDictionary<String, FileSystemEntryInfo>(); // key is full path to file/folder, value is whether this is a folder or file (true if folder, false if file)
         }
 
@@ -92,6 +95,19 @@ namespace WinChangeMonitor
             private set
             {
                 FileSystem.FoldersToTrack = value;
+            }
+        }
+
+        public static List<String> IgnoredFileSystemPatterns
+        {
+            get
+            {
+                Initialize();
+                return FileSystem.IgnoredPatterns;
+            }
+            set
+            {
+                FileSystem.IgnoredPatterns = value;
             }
         }
 

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Windows.Forms;
 using static WinChangeMonitor.RetainedSettings.FileSystemSettings;
 using static WinChangeMonitor.RetainedSettings.RegistrySettings;
@@ -35,7 +36,15 @@ namespace WinChangeMonitor
                 }
                 else
                 {
-                    this.ReportPreviewBrowser.Navigate(this.htmlPath);
+                    // load Installation Report from separate thread to prevent ContextSwitchDeadlock
+                    Thread navigateThread = new Thread(() =>
+                    {
+                        this.ReportPreviewBrowser.Invoke((MethodInvoker)delegate
+                        {
+                            this.ReportPreviewBrowser.Navigate(this.htmlPath);
+                        });
+                    });
+                    navigateThread.Start();
                 }
             }
             catch (Exception ex)
