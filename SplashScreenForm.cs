@@ -22,8 +22,6 @@ namespace WinChangeMonitor
             this.statusCount = 0;
             this.totalCount = totalCount;
 
-            Utilities.ControlSetText(this.lStatus, status);
-
             this.tReportStatus.Start();
         }
 
@@ -43,6 +41,8 @@ namespace WinChangeMonitor
         {
             try
             {
+                this.lStatus.Text = "";
+
                 if (this.Owner != null)
                 {
                     this.Location = this.Owner.Location;
@@ -116,26 +116,6 @@ namespace WinChangeMonitor
             {
                 Utilities.HandleException(ex);
             }
-        }
-
-        private void lStatus_Click(object sender, EventArgs e)
-        {
-            lStatus.Text = "Loading from  disk...";
-        }
-
-        private void lTitle_Click(object sender, EventArgs e)
-        {
-            lTitle.Text = "WinChangeMonitor is starting...";
-        }
-
-        private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
-        {
-
-        }
-
-        private void backgroundWorker1_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
-        {
-
         }
 
         private void tReportStatus_Tick(Object sender, EventArgs e)

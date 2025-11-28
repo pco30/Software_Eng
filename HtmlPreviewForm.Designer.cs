@@ -76,7 +76,6 @@
             this.Name = "HtmlPreviewForm";
             this.ShowIcon = false;
             this.Text = "WinChangeMonitor - Installation Report";
-            this.Load += new System.EventHandler(this.HtmlPreviewForm_Load);
             this.ResumeLayout(false);
 
         }

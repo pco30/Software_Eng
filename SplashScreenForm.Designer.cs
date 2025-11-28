@@ -54,7 +54,6 @@ namespace WinChangeMonitor
             this.lStatus.TabIndex = 1;
             this.lStatus.Text = "Status Message";
             this.lStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.lStatus.Click += new System.EventHandler(this.lStatus_Click);
             // 
             // tReportStatus
             // 
@@ -93,7 +92,6 @@ namespace WinChangeMonitor
             this.lTitle.Size = new System.Drawing.Size(800, 425);
             this.lTitle.TabIndex = 0;
             this.lTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.lTitle.Click += new System.EventHandler(this.lTitle_Click);
             // 
             // SplashScreenForm
             // 

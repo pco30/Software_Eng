@@ -28,20 +28,10 @@ namespace WinChangeMonitor
                 this.sfdExportJson.InitialDirectory = RetainedSettings.DirectoryName;
                 this.sfdExportJson.OverwritePrompt = true;
                 this.sfdExportJson.ValidateNames = true;
-            }
-            catch (Exception ex)
-            {
-                Utilities.HandleException(ex);
-            }
-        }
 
-        private void HtmlPreviewForm_Load(Object sender, EventArgs e)
-        {
-            try
-            {
                 if (String.IsNullOrEmpty(this.htmlPath))
                 {
-                    MessageBox.Show("HTML path is NULL or empty", "Error");
+                    MessageBox.Show("HTML path is NULL or empty", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else
                 {
@@ -54,7 +44,6 @@ namespace WinChangeMonitor
             }
         }
 
-        // Optional: Do something AFTER loading finishes
         private void ReportPreviewBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
             try

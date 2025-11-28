@@ -2,6 +2,7 @@
 using JCS;
 using Microsoft.Win32;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
@@ -147,12 +148,11 @@ namespace WinChangeMonitor
                 {
                     this.Cursor = Cursors.WaitCursor;
 
-                    this.bPreInstall.Enabled = false;
-
+                    this.ignoreToolStripMenuItem.Enabled = this.tsmiStartFresh.Enabled = false;
                     this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
                     this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                     this.cbServicesMonitor.Enabled = false;
-                    this.bPostInstall.Enabled = this.tsmiStartFresh.Enabled = false;
+                    this.bPreInstall.Enabled = this.bPostInstall.Enabled = false;
 
                     this.tStatus.Start();
 
@@ -169,34 +169,37 @@ namespace WinChangeMonitor
             }
         }
 
-        private void PreInstallInventoryDirectory(String directory, Boolean recursive)
+        private void PreInstallInventoryDirectory(DirectoryInfo directory, Boolean recursive)
         {
             try
             {
-                this.current = directory;
-
-                try
+                if (directory.Exists && (!this.ignoreToolStripMenuItem.Checked || !directory.FullName.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase)))
                 {
-                    String[] files = Directory.GetFiles(directory, "*", SearchOption.TopDirectoryOnly);
+                    this.current = directory.FullName;
 
-                    foreach (String file in files)
+                    try
                     {
-                        RetainedSettings.FileSystemInventory[file] = new RetainedSettings.FileSystemSettings.FileSystemEntryInfo { IsFolder = false };
-                    }
+                        FileInfo[] files = directory.GetFiles("*", SearchOption.TopDirectoryOnly);
 
-                    String[] subDirectories = Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly);
-
-                    foreach (String subDirectory in subDirectories)
-                    {
-                        RetainedSettings.FileSystemInventory[subDirectory] = new RetainedSettings.FileSystemSettings.FileSystemEntryInfo { IsFolder = true };
-
-                        if (recursive)
+                        foreach (FileInfo file in files)
                         {
-                            PreInstallInventoryDirectory(subDirectory, recursive);
+                            RetainedSettings.FileSystemInventory[file.FullName] = new RetainedSettings.FileSystemSettings.FileSystemEntryInfo { IsFolder = false };
+                        }
+
+                        DirectoryInfo[] subDirectories = directory.GetDirectories("*", SearchOption.TopDirectoryOnly);
+
+                        foreach (DirectoryInfo subDirectory in subDirectories)
+                        {
+                            RetainedSettings.FileSystemInventory[subDirectory.FullName] = new RetainedSettings.FileSystemSettings.FileSystemEntryInfo { IsFolder = true };
+
+                            if (recursive)
+                            {
+                                PreInstallInventoryDirectory(subDirectory, recursive);
+                            }
                         }
                     }
+                    catch (UnauthorizedAccessException) { }
                 }
-                catch (UnauthorizedAccessException) { }
             }
             catch (Exception ex)
             {
@@ -358,7 +361,7 @@ namespace WinChangeMonitor
 
                     foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in RetainedSettings.FoldersToTrack)
                     {
-                        PreInstallInventoryDirectory(folder.Folder, folder.IncludeSubFolders);
+                        PreInstallInventoryDirectory(new DirectoryInfo(folder.Folder), folder.IncludeSubFolders);
                     }
 
                     RetainedSettings.PreInstallFileSystemFinished = DateTime.Now;
@@ -652,68 +655,71 @@ namespace WinChangeMonitor
             }
         }
 
-        private void PostInstallInventoryDirectory(String directory, Boolean recursive)
+        private void PostInstallInventoryDirectory(DirectoryInfo directory, Boolean recursive)
         {
             try
             {
-                this.current = directory;
-
-                try
+                if (directory.Exists && (!this.ignoreToolStripMenuItem.Checked || !directory.FullName.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase)))
                 {
-                    String[] files = Directory.GetFiles(directory, "*", SearchOption.TopDirectoryOnly);
+                    this.current = directory.FullName;
 
-                    foreach (String file in files)
+                    try
                     {
-                        if (!RetainedSettings.FileSystemInventory.ContainsKey(file))
+                        FileInfo[] files = directory.GetFiles("*", SearchOption.TopDirectoryOnly);
+
+                        foreach (FileInfo file in files)
                         {
-                            this.folderContentsAdded[file] = false;
-                        }
-                        else if (RetainedSettings.FileSystemInventory[file].IsFolder == true) // file was a folder before and it's a file now
-                        {
-                            //this.folderContentsRemoved[file] = true; // the original folder was deleted
-                            this.folderContentsAdded[file] = false; // the new file was added
-                        }
-                        else // both preinstall and postinstall inventories contain the file, check to see if it was modified
-                        {
-                            if (File.GetLastWriteTime(file) > RetainedSettings.PreInstallFileSystemFinished)
+                            if (!RetainedSettings.FileSystemInventory.ContainsKey(file.FullName))
                             {
-                                this.folderContentsModified[file] = false;
+                                this.folderContentsAdded[file.FullName] = false;
+                            }
+                            else if (RetainedSettings.FileSystemInventory[file.FullName].IsFolder == true) // file was a folder before and it's a file now
+                            {
+                                //this.folderContentsRemoved[file.FullName] = true; // the original folder was deleted
+                                this.folderContentsAdded[file.FullName] = false; // the new file was added
+                            }
+                            else // both preinstall and postinstall inventories contain the file, check to see if it was modified
+                            {
+                                if (file.LastWriteTime > RetainedSettings.PreInstallFileSystemFinished)
+                                {
+                                    this.folderContentsModified[file.FullName] = false;
+                                }
+
+                                RetainedSettings.FileSystemInventory.Remove(file.FullName); // remove file from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
+                            }
+                        }
+
+                        DirectoryInfo[] subDirectories = directory.GetDirectories("*", SearchOption.TopDirectoryOnly);
+
+                        foreach (DirectoryInfo subDirectory in subDirectories)
+                        {
+                            if (!RetainedSettings.FileSystemInventory.ContainsKey(subDirectory.FullName))
+                            {
+                                this.folderContentsAdded[subDirectory.FullName] = true;
+                            }
+                            else if (RetainedSettings.FileSystemInventory[subDirectory.FullName].IsFolder == false) // subDirectory was a file before and it's a directory now
+                            {
+                                //this.folderContentsRemoved[subDirectory.FullName] = false; // the original file was deleted
+                                this.folderContentsAdded[subDirectory.FullName] = true; // the new directory was added
+                            }
+                            else // both preinstall and postinstall inventories contain the directory, check to see if it was modified
+                            {
+                                if (subDirectory.LastWriteTime > RetainedSettings.PreInstallFileSystemFinished)
+                                {
+                                    this.folderContentsModified[subDirectory.FullName] = true;
+                                }
+
+                                RetainedSettings.FileSystemInventory.Remove(subDirectory.FullName); // remove directory from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
                             }
 
-                            RetainedSettings.FileSystemInventory.Remove(file); // remove file from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
-                        }
-                    }
-
-                    String[] subDirectories = Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly);
-
-                    foreach (String subDirectory in subDirectories)
-                    {
-                        if (!RetainedSettings.FileSystemInventory.ContainsKey(subDirectory))
-                        {
-                            this.folderContentsAdded[subDirectory] = true;
-                        }
-                        else if (RetainedSettings.FileSystemInventory[subDirectory].IsFolder == false) // subDirectory was a file before and it's a directory now
-                        {
-                            //this.folderContentsRemoved[subDirectory] = false; // the original file was deleted
-                            this.folderContentsAdded[subDirectory] = true; // the new directory was added
-                        }
-                        else // both preinstall and postinstall inventories contain the directory, check to see if it was modified
-                        {
-                            if (Directory.GetLastWriteTime(subDirectory) > RetainedSettings.PreInstallFileSystemFinished)
+                            if (recursive)
                             {
-                                this.folderContentsModified[subDirectory] = true;
+                                PostInstallInventoryDirectory(subDirectory, recursive);
                             }
-
-                            RetainedSettings.FileSystemInventory.Remove(subDirectory); // remove directory from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
-                        }
-
-                        if (recursive)
-                        {
-                            PostInstallInventoryDirectory(subDirectory, recursive);
                         }
                     }
+                    catch (UnauthorizedAccessException) { }
                 }
-                catch (UnauthorizedAccessException) { }
             }
             catch (Exception ex)
             {
@@ -856,7 +862,7 @@ namespace WinChangeMonitor
 
                     foreach (RetainedSettings.FileSystemSettings.TrackedFolder folder in RetainedSettings.FoldersToTrack)
                     {
-                        PostInstallInventoryDirectory(folder.Folder, folder.IncludeSubFolders);
+                        PostInstallInventoryDirectory(new DirectoryInfo(folder.Folder), folder.IncludeSubFolders);
                     }
 
                     this.postInstallFoldersFinished = DateTime.Now;
@@ -864,7 +870,7 @@ namespace WinChangeMonitor
 
                 if (this.cbRegistryMonitor.Checked)
                 {
-                    this.operation = "Performing Pre-Install Registry Inventory";
+                    this.operation = "Performing Post-Install Registry Inventory";
 
                     this.postInstallRegistryStarted = DateTime.Now;
 
@@ -882,7 +888,7 @@ namespace WinChangeMonitor
 
                 if (this.cbServicesMonitor.Checked)
                 {
-                    this.operation = "Performing Pre-Install Services Inventory";
+                    this.operation = "Performing Post-Install Services Inventory";
 
                     this.postInstallServicesStarted = DateTime.Now;
 
@@ -894,6 +900,22 @@ namespace WinChangeMonitor
                 this.operation = "Generating Report";
 
                 GenerateIntallationReportHTML(this.sfdSaveReport.FileName);
+
+                HtmlPreviewForm preview;
+
+                this.Invoke(new Action(() => // use Invoke to create HtmlPreviewForm from this BackgroundWorker thread
+                {
+                    preview = new HtmlPreviewForm(this, this.sfdSaveReport.FileName);
+                    preview.MinimumSize = this.MinimumSize;
+                    preview.ShowDialog(); // this needs to be .ShowDialog() (a blocking call) so the RetainedSettings.Delete...() methods in RunWorkerCompleted are not run until the form is closed (HTMLPreviewForm's 'Export as JSON' functionality requires some of the RetainedSettngs)
+
+                    this.tStatus.Stop();
+
+                    RetainedSettings.DeleteCommonInfo();
+                    RetainedSettings.DeleteFileSystemSettings();
+                    RetainedSettings.DeleteRegistrySettings();
+                    RetainedSettings.DeleteServicesSettings();
+                }));
             }
             catch (Exception ex)
             {
@@ -905,29 +927,14 @@ namespace WinChangeMonitor
         {
             try
             {
-                // the report generation only works correctly if sfdSaveReport.FileName is valid, otherwise do nothing
-                if (!String.IsNullOrEmpty(this.sfdSaveReport.FileName))
-                {
-                    this.tStatus.Stop();
+                this.tsslStatus.Text = "";
 
-                    HtmlPreviewForm preview = new HtmlPreviewForm(this, this.sfdSaveReport.FileName);
-                    preview.MinimumSize = this.MinimumSize;
-                    preview.ShowDialog(); // this needs to be .ShowDialog() (a blocking call) so the following RetainedSettings.Delete...() methods are not run until the form is closed (HTMLPreviewForm's 'Export as JSON' functionality requires some of the RetainedSettngs)
+                this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = true;
+                this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = true;
+                this.cbServicesMonitor.Enabled = true;
+                this.bPreInstall.Enabled = true;
 
-                    RetainedSettings.DeleteCommonInfo();
-                    RetainedSettings.DeleteFileSystemSettings();
-                    RetainedSettings.DeleteRegistrySettings();
-                    RetainedSettings.DeleteServicesSettings();
-
-                    this.tsslStatus.Text = "";
-
-                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = true;
-                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = true;
-                    this.cbServicesMonitor.Enabled = true;
-                    this.bPreInstall.Enabled = true;
-
-                    this.Cursor = Cursors.Default;
-                }
+                this.Cursor = Cursors.Default;
             }
             catch (Exception ex)
             {
@@ -1470,15 +1477,12 @@ namespace WinChangeMonitor
                         UInt64 count = 1;
                         foreach (KeyValuePair<String, Boolean> addedItem in this.folderContentsAdded)
                         {
-                            if (!this.ignoreToolStripMenuItem.Checked || !addedItem.Key.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                sb.AppendLine("<tr>");
-                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
-                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(addedItem.Value ? "Folder" : "File")}</td>");
-                                sb.AppendLine("</tr>");
-                                ++count;
-                            }
+                            sb.AppendLine("<tr>");
+                            sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                            sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
+                            sb.AppendLine($"<td>{WebUtility.HtmlEncode(addedItem.Value ? "Folder" : "File")}</td>");
+                            sb.AppendLine("</tr>");
+                            ++count;
                         }
 
                         if (sb.Length == 0)
@@ -1504,15 +1508,12 @@ namespace WinChangeMonitor
                         count = 1;
                         foreach (KeyValuePair<String, Boolean> modifiedItem in this.folderContentsModified)
                         {
-                            if (!this.ignoreToolStripMenuItem.Checked || !modifiedItem.Key.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                sb.AppendLine("<tr>");
-                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
-                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value ? "Folder" : "File")}</td>");
-                                sb.AppendLine("</tr>");
-                                ++count;
-                            }
+                            sb.AppendLine("<tr>");
+                            sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                            sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
+                            sb.AppendLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value ? "Folder" : "File")}</td>");
+                            sb.AppendLine("</tr>");
+                            ++count;
                         }
 
                         if (sb.Length == 0)
@@ -1538,14 +1539,11 @@ namespace WinChangeMonitor
                         count = 1;
                         foreach (KeyValuePair<String, RetainedSettings.FileSystemSettings.FileSystemEntryInfo> removedItem in RetainedSettings.FileSystemInventory)
                         {
-                            if (!this.ignoreToolStripMenuItem.Checked || !removedItem.Key.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                sb.AppendLine("<tr>");
-                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                sb.AppendLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</td>");
-                                sb.AppendLine($"<td><i>{WebUtility.HtmlEncode(removedItem.Value.IsFolder ? "Folder" : "File")}</i></td>");
-                                sb.AppendLine("</tr>");
-                            }
+                            sb.AppendLine("<tr>");
+                            sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                            sb.AppendLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</td>");
+                            sb.AppendLine($"<td><i>{WebUtility.HtmlEncode(removedItem.Value.IsFolder ? "Folder" : "File")}</i></td>");
+                            sb.AppendLine("</tr>");
                         }
 
                         if (sb.Length == 0)
@@ -1925,6 +1923,7 @@ namespace WinChangeMonitor
 
                 RetainedSettings.DeleteServicesSettings();
 
+                this.ignoreToolStripMenuItem.Enabled = true;
                 this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = true;
                 this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = true;
                 this.cbServicesMonitor.Enabled = true;
