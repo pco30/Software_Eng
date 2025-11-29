@@ -31,6 +31,7 @@ namespace WinChangeMonitor
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(WinChangeMonitorForm));
             this.bPreInstall = new System.Windows.Forms.Button();
             this.bwPreInstall = new System.ComponentModel.BackgroundWorker();
             this.bPostInstall = new System.Windows.Forms.Button();
@@ -530,7 +531,7 @@ namespace WinChangeMonitor
             this.tsslStatus.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.tsslStatus.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
             this.tsslStatus.Name = "tsslStatus";
-            this.tsslStatus.Size = new System.Drawing.Size(745, 17);
+            this.tsslStatus.Size = new System.Drawing.Size(776, 17);
             this.tsslStatus.Spring = true;
             this.tsslStatus.Text = "tsslStatus";
             this.tsslStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -564,9 +565,9 @@ namespace WinChangeMonitor
             this.Controls.Add(this.bPreInstall);
             this.Controls.Add(this.gbFileSystemMonitor);
             this.Controls.Add(this.menuStrip);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip;
             this.Name = "WinChangeMonitorForm";
-            this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "WinChangeMonitor - BU MET CS 673/473 Group #3 - Fall 2025";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.WinChangeMonitorForm_FormClosing);
