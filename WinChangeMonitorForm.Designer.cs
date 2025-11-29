@@ -61,12 +61,14 @@ namespace WinChangeMonitor
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ignoreToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.tsmiStartFresh = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusBar = new System.Windows.Forms.StatusStrip();
             this.tsslStatus = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.bExportAsJson = new System.Windows.Forms.Button();
+            this.bwExportReport = new System.ComponentModel.BackgroundWorker();
             this.gbRegistryMonitor.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.olvKeysToTrack)).BeginInit();
             this.gbServicesMonitor.SuspendLayout();
@@ -448,7 +450,7 @@ namespace WinChangeMonitor
             this.exitToolStripMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.exitToolStripMenuItem.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(92, 22);
             this.exitToolStripMenuItem.Text = "E&xit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -477,6 +479,11 @@ namespace WinChangeMonitor
             this.ignoreToolStripMenuItem.Size = new System.Drawing.Size(218, 22);
             this.ignoreToolStripMenuItem.Text = "Ignore Unnecessary Folders";
             // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(215, 6);
+            // 
             // tsmiStartFresh
             // 
             this.tsmiStartFresh.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
@@ -504,7 +511,7 @@ namespace WinChangeMonitor
             this.aboutToolStripMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.aboutToolStripMenuItem.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.aboutToolStripMenuItem.Text = "&About...";
             // 
             // statusBar
@@ -519,19 +526,37 @@ namespace WinChangeMonitor
             // 
             // tsslStatus
             // 
+            this.tsslStatus.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.tsslStatus.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.tsslStatus.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
             this.tsslStatus.Name = "tsslStatus";
-            this.tsslStatus.Size = new System.Drawing.Size(0, 17);
+            this.tsslStatus.Size = new System.Drawing.Size(745, 17);
+            this.tsslStatus.Spring = true;
+            this.tsslStatus.Text = "tsslStatus";
+            this.tsslStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // toolStripSeparator1
+            // bExportAsJson
             // 
-            this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(215, 6);
+            this.bExportAsJson.Enabled = false;
+            this.bExportAsJson.Location = new System.Drawing.Point(233, 467);
+            this.bExportAsJson.Name = "bExportAsJson";
+            this.bExportAsJson.Size = new System.Drawing.Size(107, 23);
+            this.bExportAsJson.TabIndex = 11;
+            this.bExportAsJson.Text = "Export Report";
+            this.bExportAsJson.UseVisualStyleBackColor = true;
+            this.bExportAsJson.Click += new System.EventHandler(this.bExportAsJson_Click);
+            // 
+            // bwExportReport
+            // 
+            this.bwExportReport.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bwExportReport_DoWork);
+            this.bwExportReport.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.bwExportReport_RunWorkerCompleted);
             // 
             // WinChangeMonitorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(791, 515);
+            this.Controls.Add(this.bExportAsJson);
             this.Controls.Add(this.statusBar);
             this.Controls.Add(this.gbServicesMonitor);
             this.Controls.Add(this.gbRegistryMonitor);
@@ -588,7 +613,6 @@ namespace WinChangeMonitor
         private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.StatusStrip statusBar;
-        private System.Windows.Forms.ToolStripStatusLabel tsslStatus;
         private BrightIdeasSoftware.ObjectListView olvFoldersToTrack;
         private BrightIdeasSoftware.OLVColumn olvcFolder;
         private BrightIdeasSoftware.OLVColumn olvcIncludeSubFolders;
@@ -600,6 +624,9 @@ namespace WinChangeMonitor
         private System.Windows.Forms.Button bDefaultTrackedKeys;
         private System.Windows.Forms.ToolStripMenuItem tsmiStartFresh;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.Button bExportAsJson;
+        private System.ComponentModel.BackgroundWorker bwExportReport;
+        private System.Windows.Forms.ToolStripStatusLabel tsslStatus;
     }
 }
 

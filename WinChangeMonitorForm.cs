@@ -2,10 +2,10 @@
 using JCS;
 using Microsoft.Win32;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -13,6 +13,7 @@ using System.Net;
 using System.Security;
 using System.ServiceProcess;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
@@ -60,8 +61,10 @@ namespace WinChangeMonitor
         private DateTime? postInstallServicesStarted = null;
         private DateTime? postInstallServicesFinished = null;
         private FolderBrowserDialog fbdAddFolder = new FolderBrowserDialog();
+        private JsonExportData jsonReport = null;
         private RegistryKeyBrowserDialog rkbdAddKey = new RegistryKeyBrowserDialog();
         private SaveFileDialog sfdSaveReport = new SaveFileDialog();
+        private SaveFileDialog sfdExportJson = new SaveFileDialog();
         private SortedDictionary<String, Boolean> folderContentsAdded = new SortedDictionary<String, Boolean>();
         private SortedDictionary<String, Boolean> folderContentsModified = new SortedDictionary<String, Boolean>();
         private SortedDictionary<String, RegistryEntryInfo> registryContentsAdded = new SortedDictionary<String, RegistryEntryInfo>();
@@ -75,6 +78,12 @@ namespace WinChangeMonitor
             try
             {
                 InitializeComponent();
+
+                this.sfdExportJson.FileName = "Report.json";
+                this.sfdExportJson.Filter = "JSON Files (*.json)|*.json";
+                this.sfdExportJson.InitialDirectory = RetainedSettings.DirectoryName;
+                this.sfdExportJson.OverwritePrompt = true;
+                this.sfdExportJson.ValidateNames = true;
 
                 this.menuStrip.Renderer = new CustomToolStripProfessionalRenderer();
 
@@ -154,7 +163,7 @@ namespace WinChangeMonitor
                     this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
                     this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                     this.cbServicesMonitor.Enabled = false;
-                    this.bPreInstall.Enabled = this.bPostInstall.Enabled = false;
+                    this.bPreInstall.Enabled = this.bPostInstall.Enabled = this.bExportAsJson.Enabled = false;
 
                     if (this.ignoreToolStripMenuItem.Checked)
                     {
@@ -181,7 +190,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                if (directory.Exists && (!this.ignoreToolStripMenuItem.Checked || !directory.FullName.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase)))
+                if (directory.Exists)
                 {
                     this.current = directory.FullName;
 
@@ -429,6 +438,8 @@ namespace WinChangeMonitor
                 this.tsslStatus.Text = "Pre-Install Inventory Complete";
 
                 this.Cursor = Cursors.Default;
+
+                MessageBox.Show("Pre-Install Inventory Complete");
             }
             catch (Exception ex)
             {
@@ -444,12 +455,10 @@ namespace WinChangeMonitor
                 {
                     this.Cursor = Cursors.WaitCursor;
 
-                    this.bPostInstall.Enabled = false;
-
                     this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
                     this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                     this.cbServicesMonitor.Enabled = false;
-                    this.bPreInstall.Enabled = this.ignoreToolStripMenuItem.Enabled = this.tsmiStartFresh.Enabled = false;
+                    this.bPreInstall.Enabled = this.bPostInstall.Enabled = this.bExportAsJson.Enabled = this.ignoreToolStripMenuItem.Enabled = this.tsmiStartFresh.Enabled = false;
 
                     this.tStatus.Start();
 
@@ -475,7 +484,10 @@ namespace WinChangeMonitor
                 {
                     this.bRemoveFolder.Enabled = false;
                 }
-                this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);
+                if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
+                {
+                    this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);
+                }
             }
             catch (Exception ex)
             {
@@ -496,7 +508,10 @@ namespace WinChangeMonitor
                 {
                     this.bRemoveKey.Enabled = false;
                 }
-                this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);
+                if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
+                {
+                    this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);
+                }
             }
             catch (Exception ex)
             {
@@ -508,7 +523,10 @@ namespace WinChangeMonitor
         {
             try
             {
-                this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);
+                if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
+                {
+                    this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);
+                }
             }
             catch (Exception ex)
             {
@@ -667,7 +685,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                if (directory.Exists && (!this.ignoreToolStripMenuItem.Checked || !directory.FullName.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase)))
+                if (directory.Exists)
                 {
                     this.current = directory.FullName;
 
@@ -873,6 +891,54 @@ namespace WinChangeMonitor
                         PostInstallInventoryDirectory(new DirectoryInfo(folder.Folder), folder.IncludeSubFolders);
                     }
 
+                    if (this.ignoreToolStripMenuItem.Checked)
+                    {
+                        List<String> toRemove = new List<String>();
+                        foreach (KeyValuePair<String, Boolean> entry in this.folderContentsAdded)
+                        {
+                            this.current = entry.Key;
+                            if (MatchesIgnoredPattern(entry.Key, RetainedSettings.IgnoredFileSystemPatterns))
+                            {
+                                toRemove.Add(entry.Key);
+                            }
+                        }
+
+                        foreach (String key in toRemove)
+                        {
+                            this.folderContentsAdded.Remove(key);
+                        }
+
+                        toRemove = new List<String>();
+                        foreach (KeyValuePair<String, Boolean> entry in this.folderContentsModified)
+                        {
+                            this.current = entry.Key;
+                            if (MatchesIgnoredPattern(entry.Key, RetainedSettings.IgnoredFileSystemPatterns))
+                            {
+                                toRemove.Add(entry.Key);
+                            }
+                        }
+
+                        foreach(String key in toRemove)
+                        {
+                            this.folderContentsModified.Remove(key);
+                        }
+
+                        toRemove = new List<String>();
+                        foreach (KeyValuePair<String, RetainedSettings.FileSystemSettings.FileSystemEntryInfo> entry in RetainedSettings.FileSystemInventory)
+                        {
+                            this.current = entry.Key;
+                            if (MatchesIgnoredPattern(entry.Key, RetainedSettings.IgnoredFileSystemPatterns))
+                            {
+                                toRemove.Add(entry.Key);
+                            }
+                        }
+
+                        foreach (String key in toRemove)
+                        {
+                            RetainedSettings.FileSystemInventory.Remove(key);
+                        }
+                    }
+
                     this.postInstallFoldersFinished = DateTime.Now;
                 }
 
@@ -911,19 +977,17 @@ namespace WinChangeMonitor
 
                 GenerateIntallationReportHTML(this.sfdSaveReport.FileName);
 
-                HtmlPreviewForm preview;
+                Process.Start(this.sfdSaveReport.FileName);
 
-                this.Invoke(new Action(() => // use Invoke to create HtmlPreviewForm from this BackgroundWorker thread
-                {
-                    preview = new HtmlPreviewForm(this, this.sfdSaveReport.FileName);
-                    preview.MinimumSize = this.MinimumSize;
-                    preview.ShowDialog(); // this needs to be .ShowDialog() (a blocking call) so the RetainedSettings.Delete...() methods in RunWorkerCompleted are not run until the form is closed (HTMLPreviewForm's 'Export as JSON' functionality requires some of the RetainedSettngs)
+                this.jsonReport = new JsonExportData(
+                        RetainedSettings.FoldersToTrack, this.FolderContentsAdded, this.FolderContentsModified, RetainedSettings.FileSystemInventory,
+                        RetainedSettings.KeysToTrack, this.RegistryContentsAdded, this.RegistryContentsModified, RetainedSettings.RegistryInventory,
+                        this.ServicesAdded, this.ServicesModified, RetainedSettings.ServicesInventory);
 
-                    RetainedSettings.DeleteCommonInfo();
-                    RetainedSettings.DeleteFileSystemSettings();
-                    RetainedSettings.DeleteRegistrySettings();
-                    RetainedSettings.DeleteServicesSettings();
-                }));
+                RetainedSettings.DeleteCommonInfo();
+                RetainedSettings.DeleteFileSystemSettings();
+                RetainedSettings.DeleteRegistrySettings();
+                RetainedSettings.DeleteServicesSettings();
             }
             catch (Exception ex)
             {
@@ -942,9 +1006,11 @@ namespace WinChangeMonitor
                 this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = true;
                 this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = true;
                 this.cbServicesMonitor.Enabled = true;
-                this.bPreInstall.Enabled = true;
+                this.bPreInstall.Enabled = this.bExportAsJson.Enabled = true;
 
                 this.Cursor = Cursors.Default;
+
+                MessageBox.Show("Post-Install Inventory Complete");
             }
             catch (Exception ex)
             {
@@ -1447,6 +1513,17 @@ namespace WinChangeMonitor
                     writer.WriteLine("td {");
                     writer.WriteLine("text-align: center;");
                     writer.WriteLine("}");
+                    writer.WriteLine(".toggle-text {");
+                    writer.WriteLine("white-space: nowrap;");
+                    writer.WriteLine("overflow: hidden;");
+                    writer.WriteLine("text-overflow: ellipsis;");
+                    writer.WriteLine("display: table-cel;");
+                    writer.WriteLine("}");
+                    writer.WriteLine(".full-text {");
+                    writer.WriteLine("overflow-wrap: break-word;");
+                    writer.WriteLine("white-space: normal;");
+                    writer.WriteLine("overflow: visible;");
+                    writer.WriteLine("}");
                     writer.WriteLine("</style>");
                     writer.WriteLine("</head>");
                     writer.WriteLine("<body>");
@@ -1495,7 +1572,7 @@ namespace WinChangeMonitor
                         foreach (RetainedSettings.FileSystemSettings.TrackedFolder trackedFolder in RetainedSettings.FoldersToTrack)
                         {
                             writer.WriteLine("<tr>");
-                            writer.WriteLine($"<td>{WebUtility.HtmlEncode(trackedFolder.Folder)}</td>");
+                            writer.WriteLine($"<td class=\"toggle-text\">{WebUtility.HtmlEncode(trackedFolder.Folder)}</td>");
                             writer.WriteLine($"<td>{WebUtility.HtmlEncode(trackedFolder.IncludeSubFolders ? "Yes" : "No")}</td>");
                             writer.WriteLine("</tr>");
                         }
@@ -1511,7 +1588,7 @@ namespace WinChangeMonitor
                             foreach (String pattern in RetainedSettings.IgnoredFileSystemPatterns)
                             {
                                 writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(pattern)}</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\">{WebUtility.HtmlEncode(pattern)}</td>");
                                 writer.WriteLine("</tr>");
                             }
                             writer.WriteLine("</table>");
@@ -1519,23 +1596,7 @@ namespace WinChangeMonitor
 
                         writer.WriteLine("<h3 id=\"file_system_added\">File System Contents Added</h3>");
 
-                        StringBuilder sb = new StringBuilder();
-
-                        UInt64 count = 1;
-                        foreach (KeyValuePair<String, Boolean> addedItem in this.folderContentsAdded)
-                        {
-                            if (!this.ignoreToolStripMenuItem.Checked || !MatchesIgnoredPattern(addedItem.Key, RetainedSettings.IgnoredFileSystemPatterns))
-                            {
-                                sb.AppendLine("<tr>");
-                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
-                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(addedItem.Value ? "Folder" : "File")}</td>");
-                                sb.AppendLine("</tr>");
-                                ++count;
-                            }
-                        }
-
-                        if (sb.Length == 0)
+                        if (this.folderContentsAdded.Count == 0)
                         {
                             writer.WriteLine("<div>Nothing was added</div>");
                         }
@@ -1547,29 +1608,22 @@ namespace WinChangeMonitor
                             writer.WriteLine("<th>Name</th>");
                             writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
                             writer.WriteLine("</tr>");
-                            writer.WriteLine(sb.ToString());
+                            UInt64 count = 1;
+                            foreach (KeyValuePair<String, Boolean> addedItem in this.folderContentsAdded)
+                            {
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\" id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(addedItem.Value ? "Folder" : "File")}</td>");
+                                writer.WriteLine("</tr>");
+                                ++count;
+                            }
                             writer.WriteLine("</table>");
                         }
 
                         writer.WriteLine("<h3 id=\"file_system_modified\">File System Contents Modified</h3>");
 
-                        sb = new StringBuilder();
-
-                        count = 1;
-                        foreach (KeyValuePair<String, Boolean> modifiedItem in this.folderContentsModified)
-                        {
-                            if (!this.ignoreToolStripMenuItem.Checked || !MatchesIgnoredPattern(modifiedItem.Key, RetainedSettings.IgnoredFileSystemPatterns))
-                            {
-                                sb.AppendLine("<tr>");
-                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                sb.AppendLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
-                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value ? "Folder" : "File")}</td>");
-                                sb.AppendLine("</tr>");
-                                ++count;
-                            }
-                        }
-
-                        if (sb.Length == 0)
+                        if (this.folderContentsModified.Count == 0)
                         {
                             writer.WriteLine("<div>Nothing was modified</div>");
                         }
@@ -1581,28 +1635,22 @@ namespace WinChangeMonitor
                             writer.WriteLine("<th>Name</th>");
                             writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
                             writer.WriteLine("</tr>");
-                            writer.WriteLine(sb.ToString());
+                            UInt64 count = 1;
+                            foreach (KeyValuePair<String, Boolean> modifiedItem in this.folderContentsModified)
+                            {
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\" id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value ? "Folder" : "File")}</td>");
+                                writer.WriteLine("</tr>");
+                                ++count;
+                            }
                             writer.WriteLine("</table>");
                         }
 
                         writer.WriteLine("<h3 id=\"file_system_removed\">File System Contents Removed</h3>");
 
-                        sb = new StringBuilder();
-
-                        count = 1;
-                        foreach (KeyValuePair<String, RetainedSettings.FileSystemSettings.FileSystemEntryInfo> removedItem in RetainedSettings.FileSystemInventory)
-                        {
-                            if (!this.ignoreToolStripMenuItem.Checked || !MatchesIgnoredPattern(removedItem.Key, RetainedSettings.IgnoredFileSystemPatterns))
-                            {
-                                sb.AppendLine("<tr>");
-                                sb.AppendLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                sb.AppendLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</td>");
-                                sb.AppendLine($"<td><i>{WebUtility.HtmlEncode(removedItem.Value.IsFolder ? "Folder" : "File")}</i></td>");
-                                sb.AppendLine("</tr>");
-                            }
-                        }
-
-                        if (sb.Length == 0)
+                        if (RetainedSettings.FileSystemInventory.Count == 0)
                         {
                             writer.WriteLine("<div>Nothing was removed</div>");
                         }
@@ -1614,7 +1662,15 @@ namespace WinChangeMonitor
                             writer.WriteLine("<th>Name</th>");
                             writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
                             writer.WriteLine("</tr>");
-                            writer.WriteLine(sb.ToString());
+                            UInt64 count = 1;
+                            foreach (KeyValuePair<String, RetainedSettings.FileSystemSettings.FileSystemEntryInfo> removedItem in RetainedSettings.FileSystemInventory)
+                            {
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\" id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</td>");
+                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(removedItem.Value.IsFolder ? "Folder" : "File")}</i></td>");
+                                writer.WriteLine("</tr>");
+                            }
                             writer.WriteLine("</table>");
                         }
                     }
@@ -1659,7 +1715,7 @@ namespace WinChangeMonitor
                             {
                                 writer.WriteLine("<tr>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\" id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
 
                                 if (addedItem.Value == null)
                                 {
@@ -1668,10 +1724,8 @@ namespace WinChangeMonitor
                                 }
                                 else
                                 {
-                                    writer.WriteLine($"<td>{WebUtility.HtmlEncode(translateRegKind[addedItem.Value.Kind])}</td>");
-                                    writer.WriteLine("<td>");
-                                    writer.WriteLine(Utilities.HandleValueWithZeroDelimiter(addedItem.Value.Value));
-                                    writer.WriteLine("</td>");
+                                    writer.WriteLine($"<td class=\"toggle-text\">{WebUtility.HtmlEncode(translateRegKind[addedItem.Value.Kind])}</td>");
+                                    writer.WriteLine($"<td class=\"toggle-text\">{Utilities.HandleValueWithZeroDelimiter(addedItem.Value.Value)}</td>");
                                 }
 
                                 writer.WriteLine("</tr>");
@@ -1700,7 +1754,7 @@ namespace WinChangeMonitor
                             {
                                 writer.WriteLine("<tr>");
                                 writer.WriteLine($"<td rowspan=\"2\">{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\" id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
 
                                 if (modifiedItem.Value == null) // this isn't really possible to modify a registry key (renaming it would report the original key as deleted and the renamed key as new)
                                 {
@@ -1710,7 +1764,9 @@ namespace WinChangeMonitor
                                 else
                                 {  
                                     writer.WriteLine($"<td>{WebUtility.HtmlEncode(translateRegKind[modifiedItem.Value.Current.Kind])}</td>");
-                                    writer.WriteLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value.Current.Value)}</td>");
+                                    writer.WriteLine("<td class=\"toggle-text\">");
+                                    writer.WriteLine($"{Utilities.HandleValueWithZeroDelimiter(modifiedItem.Value.Current.Value)}");
+                                    writer.WriteLine("</td>");
                                     writer.WriteLine("</tr>");
                                     writer.WriteLine("<tr>");
                                     writer.WriteLine("<td><i>(original if different)</i></td>");
@@ -1720,12 +1776,10 @@ namespace WinChangeMonitor
                                         writer.WriteLine($"<i>{WebUtility.HtmlEncode(translateRegKind[modifiedItem.Value.Initial.Kind])}</i>");
                                     }
                                     writer.WriteLine("</td>");
-                                    writer.WriteLine("<td>");
+                                    writer.WriteLine("<td class=\"toggle-text\">");
                                     if (modifiedItem.Value.Current.Value != modifiedItem.Value.Initial.Value)
                                     {
-                                        writer.WriteLine("<i>");
-                                        writer.WriteLine(Utilities.HandleValueWithZeroDelimiter(modifiedItem.Value.Initial.Value));
-                                        writer.WriteLine("</i>");
+                                        writer.WriteLine($"<i>{Utilities.HandleValueWithZeroDelimiter(modifiedItem.Value.Initial.Value)}</i>");
                                     }
                                     writer.WriteLine("</td>");
                                 }
@@ -1756,7 +1810,7 @@ namespace WinChangeMonitor
                             {
                                 writer.WriteLine("<tr>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                writer.WriteLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</i></td>");
+                                writer.WriteLine($"<td class=\"toggle-text\" id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</i></td>");
 
                                 if (removedItem.Value == null)
                                 {
@@ -1765,10 +1819,10 @@ namespace WinChangeMonitor
                                 }
                                 else
                                 {
-                                    writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(translateRegKind[removedItem.Value.Kind])}</i></td>");
-                                    writer.WriteLine("<td><i>");
-                                    writer.WriteLine(Utilities.HandleValueWithZeroDelimiter(removedItem.Value.Value));
-                                    writer.WriteLine($"</i></td>");
+                                    writer.WriteLine($"<td class=\"toggle-text\"><i>{WebUtility.HtmlEncode(translateRegKind[removedItem.Value.Kind])}</i></td>");
+                                    writer.WriteLine("<td class=\"toggle-text\">");
+                                    writer.WriteLine($"<i>{Utilities.HandleValueWithZeroDelimiter(removedItem.Value.Value)}</i>");
+                                    writer.WriteLine("</td>");
                                 }
 
                                 writer.WriteLine("</tr>");
@@ -1812,12 +1866,12 @@ namespace WinChangeMonitor
                                 ServiceInfo s = addedItem.Value; // allows "s." to get properties instead of "addedItem.Value."
                                 writer.WriteLine("<tr>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.CanPauseAndContinue.ToString())}</td>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.CanShutdown.ToString())}</td>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.CanStop.ToString())}</td>");
-                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.DisplayName.ToString())}</td>");
-                                writer.WriteLine("<td>");
+                                writer.WriteLine($"<td class=\"toggle-text\">{WebUtility.HtmlEncode(s.DisplayName.ToString())}</td>");
+                                writer.WriteLine("<td class=\"toggle-text\">");
                                 foreach (String serviceNameDependedOn in s.ServiceNamesDependedOn)
                                 {
                                     writer.WriteLine($"<div>{WebUtility.HtmlEncode(serviceNameDependedOn)}</div>");
@@ -1857,13 +1911,13 @@ namespace WinChangeMonitor
                             {
                                 writer.WriteLine("<tr>");
                                 writer.WriteLine($"<td rowspan=\"2\">{WebUtility.HtmlEncode(count.ToString())}</td>");
-                                writer.WriteLine($"<td id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
                                 ServiceInfo curr = modifiedItem.Value.Current; // allows "curr." to get Current properties instead of "modifiedItem.Value.Current."
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.CanPauseAndContinue.ToString())}</td>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.CanShutdown.ToString())}</td>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.CanStop.ToString())}</td>");
-                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.DisplayName)}</td>");
-                                writer.WriteLine("<td>");
+                                writer.WriteLine($"<td class=\"toggle-text\">{WebUtility.HtmlEncode(curr.DisplayName)}</td>");
+                                writer.WriteLine("<td class=\"toggle-text\">");
                                 foreach (String serviceNameDependedOn in curr.ServiceNamesDependedOn)
                                 {
                                     writer.WriteLine($"<div>{WebUtility.HtmlEncode(serviceNameDependedOn)}</div>");
@@ -1878,8 +1932,8 @@ namespace WinChangeMonitor
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.CanPauseAndContinue != init.CanPauseAndContinue ? init.CanPauseAndContinue.ToString() : "")}</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.CanShutdown != init.CanShutdown ? init.CanShutdown.ToString() : "")}</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.CanStop != init.CanStop ? init.CanStop.ToString() : "")}</i></td>");
-                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.DisplayName != init.DisplayName ? init.DisplayName : "")}</i></td>");
-                                writer.WriteLine("<td>");
+                                writer.WriteLine($"<td class=\"toggle-text\"><i>{WebUtility.HtmlEncode(curr.DisplayName != init.DisplayName ? init.DisplayName : "")}</i></td>");
+                                writer.WriteLine("<td class=\"toggle-text\">");
                                 if (!curr.ServiceNamesDependedOn.SetEquals(init.ServiceNamesDependedOn))
                                 {
                                     foreach(String serviceNameDependedOn in init.ServiceNamesDependedOn)
@@ -1925,12 +1979,12 @@ namespace WinChangeMonitor
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
 
                                 ServiceInfo s = removedItem.Value; // allows "s." to get properties instead of "removedItem.Value."
-                                writer.WriteLine($"<td id=\"name-td\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</i></td>");
+                                writer.WriteLine($"<td class=\"toggle-text\"><i>{WebUtility.HtmlEncode(removedItem.Key)}</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.CanPauseAndContinue.ToString())}</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.CanShutdown.ToString())}</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.CanStop.ToString())}</i></td>");
-                                writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.DisplayName)}</i></td>");
-                                writer.WriteLine("<td>");
+                                writer.WriteLine($"<td class=\"toggle-text\"><i>{WebUtility.HtmlEncode(s.DisplayName)}</i></td>");
+                                writer.WriteLine("<td class=\"toggle-text\">");
                                 foreach (String serviceNameDependedOn in s.ServiceNamesDependedOn)
                                 {
                                     writer.WriteLine($"<div><i>{WebUtility.HtmlEncode(serviceNameDependedOn)}</i></div>");
@@ -1946,6 +2000,23 @@ namespace WinChangeMonitor
                             writer.WriteLine("</table>");
                         }
                     }
+
+                    writer.WriteLine("<script>");
+                    writer.WriteLine("document.querySelectorAll('.toggle-text').forEach(element => {");
+                    writer.WriteLine("element.addEventListener('click', function() {");
+                    writer.WriteLine("if (this.style.whiteSpace === 'normal') {");
+                    writer.WriteLine("this.style.whiteSpace = 'nowrap';");
+                    writer.WriteLine("this.style.overflow = 'hidden';");
+                    writer.WriteLine("this.style.textOverflow = 'ellipsis';");
+                    writer.WriteLine("} else {");
+                    writer.WriteLine("this.style.whiteSpace = 'normal';");
+                    writer.WriteLine("this.style.overflow = 'visible';");
+                    writer.WriteLine("this.style.textOverflow = 'clip';");
+                    writer.WriteLine("this.style.overflowWrap = 'break-word';");
+                    writer.WriteLine("}");
+                    writer.WriteLine("});");
+                    writer.WriteLine("});");
+                    writer.WriteLine("</script>");
 
                     writer.WriteLine("</body>");
                     writer.WriteLine("</html>");
@@ -1986,6 +2057,46 @@ namespace WinChangeMonitor
 
                 this.bPreInstall.Enabled = true;
                 this.bPostInstall.Enabled = this.tsmiStartFresh.Enabled = false;
+            }
+        }
+
+        private void bExportAsJson_Click(Object sender, EventArgs e)
+        {
+            try
+            {
+                if (this.sfdExportJson.ShowDialog() == DialogResult.OK)
+                {
+                    this.bwExportReport.RunWorkerAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void bwExportReport_DoWork(Object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                String jsonData = JsonSerializer.Serialize(this.jsonReport, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(this.sfdExportJson.FileName, jsonData);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void bwExportReport_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            try
+            {
+                MessageBox.Show($"Report saved to {this.sfdExportJson.FileName}");
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
             }
         }
 
@@ -2081,7 +2192,7 @@ namespace WinChangeMonitor
         {
             if (e.Item is ToolStripStatusLabel)
             {
-                TextRenderer.DrawText(e.Graphics, e.Text, e.TextFont, e.TextRectangle, e.TextColor, Color.Transparent, e.TextFormat | TextFormatFlags.EndEllipsis);
+                TextRenderer.DrawText(e.Graphics, e.Text, e.TextFont, e.TextRectangle, e.TextColor, Color.Transparent, e.TextFormat | TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine);
             }
             else
             {
