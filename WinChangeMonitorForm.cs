@@ -446,10 +446,10 @@ namespace WinChangeMonitor
 
                     this.bPostInstall.Enabled = false;
 
-                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
-                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
+                    this.cbFileSystemMonitor.Enabled = this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
+                    this.cbRegistryMonitor.Enabled = this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
                     this.cbServicesMonitor.Enabled = false;
-                    this.bPreInstall.Enabled = this.tsmiStartFresh.Enabled = false;
+                    this.bPreInstall.Enabled = this.ignoreToolStripMenuItem.Enabled = this.tsmiStartFresh.Enabled = false;
 
                     this.tStatus.Start();
 
@@ -2049,39 +2049,15 @@ namespace WinChangeMonitor
                 }
                 else // a previous inventory exists
                 {
-                    // the following IF block could be condensed to one line, but it makes the code harder for a human to read
-                    if (RetainedSettings.PreInstallFileSystemFinished != null)
-                    {
-                        this.cbFileSystemMonitor.Checked = true; 
-                    }
-                    else
-                    {
-                        this.cbFileSystemMonitor.Checked = false;
-                    }
+                    this.cbFileSystemMonitor.Checked = (RetainedSettings.PreInstallFileSystemFinished != null);
                     this.cbFileSystemMonitor.Enabled = false;
-                    this.olvFoldersToTrack.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
-
-                    // the following IF block could be condensed to one line, but it makes the code harder for a human to read
-                    if (RetainedSettings.PreInstallRegistryFinished != null)
-                    {
-                        this.cbRegistryMonitor.Checked = true;
-                    }
-                    else
-                    {
-                        this.cbRegistryMonitor.Checked = false;
-                    }
+                    this.olvFoldersToTrack.Enabled = this.bDefaultTrackedFolders.Enabled = this.bAddFolder.Enabled = this.bRemoveFolder.Enabled = false;
+                    
+                    this.cbRegistryMonitor.Checked = (RetainedSettings.PreInstallRegistryFinished != null);
                     this.cbRegistryMonitor.Enabled = false;
-                    this.olvKeysToTrack.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
+                    this.olvKeysToTrack.Enabled = this.bDefaultTrackedKeys.Enabled = this.bAddKey.Enabled = this.bRemoveKey.Enabled = false;
 
-                    // the following IF block could be condensed to one line, but it makes the code harder for a human to read
-                    if (RetainedSettings.PreInstallServicesFinished != null)
-                    {
-                        this.cbServicesMonitor.Checked = true;
-                    }
-                    else
-                    {
-                        this.cbServicesMonitor.Checked = false;
-                    }
+                    this.cbServicesMonitor.Checked = (RetainedSettings.PreInstallServicesFinished != null);
                     this.cbServicesMonitor.Enabled = false;
 
                     this.bPreInstall.Enabled = false;

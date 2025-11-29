@@ -29,22 +29,24 @@ namespace WinChangeMonitor
                 this.sfdExportJson.InitialDirectory = RetainedSettings.DirectoryName;
                 this.sfdExportJson.OverwritePrompt = true;
                 this.sfdExportJson.ValidateNames = true;
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
 
+        private void HtmlPreviewForm_Load(Object sender, EventArgs e)
+        {
+            try
+            {
                 if (String.IsNullOrEmpty(this.htmlPath))
                 {
                     MessageBox.Show("HTML path is NULL or empty", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else
                 {
-                    // load Installation Report from separate thread to prevent ContextSwitchDeadlock
-                    Thread navigateThread = new Thread(() =>
-                    {
-                        this.ReportPreviewBrowser.Invoke((MethodInvoker)delegate
-                        {
-                            this.ReportPreviewBrowser.Navigate(this.htmlPath);
-                        });
-                    });
-                    navigateThread.Start();
+                    this.ReportPreviewBrowser.Navigate(this.htmlPath); // WebBrowser.Navigate is asynchronous
                 }
             }
             catch (Exception ex)
@@ -53,7 +55,7 @@ namespace WinChangeMonitor
             }
         }
 
-        private void ReportPreviewBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        private void ReportPreviewBrowser_DocumentCompleted(Object sender, WebBrowserDocumentCompletedEventArgs e)
         {
             try
             {
