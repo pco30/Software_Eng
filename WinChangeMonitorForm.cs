@@ -673,6 +673,8 @@ namespace WinChangeMonitor
 
                     this.olvKeysToTrack.DeselectAll();
                     this.olvKeysToTrack.Items[this.olvKeysToTrack.Items.Count - 1].Selected = true;
+
+                    this.bPreInstall.Enabled = true;
                 }
             }
             catch (Exception ex)
@@ -778,7 +780,7 @@ namespace WinChangeMonitor
                     }
                     else // both preinstall and postinstall inventories contain the value, check to see if it was modified
                     {
-                        if ((key.GetValueKind(valueName) != RetainedSettings.RegistryInventory[fullPath].Kind) || (key.GetValue(valueName)?.ToString() != RetainedSettings.RegistryInventory[fullPath].Value))
+                        if ((key.GetValueKind(valueName) != RetainedSettings.RegistryInventory[fullPath].Kind) || (Utilities.PrettyString(key.GetValue(valueName)) != RetainedSettings.RegistryInventory[fullPath].Value))
                         {
                             this.registryContentsModified[fullPath] = new RegistryEntryDiff(RetainedSettings.RegistryInventory[fullPath],
                                                                                             new RegistryEntryInfo { Kind = key.GetValueKind(valueName), Value = Utilities.PrettyString(key.GetValue(valueName)) });
@@ -2057,6 +2059,8 @@ namespace WinChangeMonitor
 
                 this.bPreInstall.Enabled = true;
                 this.bPostInstall.Enabled = this.tsmiStartFresh.Enabled = false;
+
+                this.tsslStatus.Text = "";
             }
         }
 

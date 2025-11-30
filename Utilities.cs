@@ -161,9 +161,18 @@ namespace WinChangeMonitor
                 }
                 StringBuilder sb = new StringBuilder();
                 String[] split = value.Split((Char)0); // handle REG_MULTI_SZ where (Char)0 is the delimiter
+                Boolean isFirst = true;
                 foreach (String s in split)
                 {
-                    sb.AppendLine($"<div>{WebUtility.HtmlEncode(s)}</div>");
+                    if (s.Length > 0) // REG_MULTI_SZ starts with \0 so skip that one
+                    {
+                        if (!isFirst)
+                        {
+                            sb.Append(", ");
+                        }
+                        sb.Append(WebUtility.HtmlEncode(s));
+                        isFirst = false;
+                    }
                 }
                 return sb.ToString();
             }
