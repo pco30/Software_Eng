@@ -52,24 +52,6 @@ namespace WinChangeMonitor
                 public Boolean IncludeSubFolders { get; set; }
             }
 
-            [MessagePackObject]
-            public class FileSystemEntryInfo : IMessagePackSerializationCallbackReceiver
-            {
-                [Key(0)]
-                [JsonInclude]
-                public Boolean IsFolder { get; set; }
-
-                public void OnBeforeSerialize()
-                {
-                    // not used, only present to satisfy IMessagePackSerializationCallbackReceiver interface member requirement
-                }
-
-                public void OnAfterDeserialize()
-                {
-                    WinChangeMonitorForm.SplashScreen.IncrementStatus();
-                }
-            }
-
             [Key(0)]
             public List<TrackedFolder> FoldersToTrack = new List<TrackedFolder>();
 
@@ -80,7 +62,7 @@ namespace WinChangeMonitor
             public DateTime? PreInstallFinished = null;
 
             [Key(3)]
-            public SortedDictionary<String, FileSystemEntryInfo> Inventory = new SortedDictionary<String, FileSystemEntryInfo>(); // key is full path to file/folder, value is whether this is a folder or file (true if folder, false if file)
+            public SortedDictionary<String, FileSystemEntryInfo> Inventory = new SortedDictionary<String, FileSystemEntryInfo>();
         }
 
         private static FileSystemSettings FileSystem = null;
@@ -124,7 +106,7 @@ namespace WinChangeMonitor
             }
         }
 
-        public static SortedDictionary<String, FileSystemSettings.FileSystemEntryInfo> FileSystemInventory
+        public static SortedDictionary<String, FileSystemEntryInfo> FileSystemInventory
         {
             get
             {

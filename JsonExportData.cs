@@ -15,10 +15,10 @@ namespace WinChangeMonitor
         public List<TrackedFolder> TrackedFolders { get; private set; }
 
         [JsonInclude]
-        public SortedDictionary<String, Boolean> FolderContentsAdded { get; private set; }
+        public SortedDictionary<String, FileSystemEntryInfo> FolderContentsAdded { get; private set; }
 
         [JsonInclude]
-        public SortedDictionary<String, Boolean> FolderContentsModified { get; private set; }
+        public SortedDictionary<String, FileSystemEntryDiff> FolderContentsModified { get; private set; }
 
         [JsonInclude]
         public SortedDictionary<String, FileSystemEntryInfo> FolderContentsRemoved { get; private set; }
@@ -43,11 +43,11 @@ namespace WinChangeMonitor
 
         [JsonInclude]
         public SortedDictionary<String, ServiceInfo> ServicesRemoved { get; private set; }
-
+        
         public JsonExportData(
             List<TrackedFolder> trackedFolders,
-            SortedDictionary<String, Boolean> folderContentsAdded,
-            SortedDictionary<String, Boolean> folderContentsModified,
+            SortedDictionary<String, FileSystemEntryInfo> folderContentsAdded,
+            SortedDictionary<String, FileSystemEntryDiff> folderContentsModified,
             SortedDictionary<String, FileSystemEntryInfo> folderContentsRemoved,
             List<TrackedKey> trackedKeys,
             SortedDictionary<String, RegistryEntryInfo> registryContentsAdded,

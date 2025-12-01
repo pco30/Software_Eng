@@ -43,8 +43,8 @@ namespace WinChangeMonitor
             { RegistryValueKind.Unknown, "N/A" }
         };
 
-        public SortedDictionary<String, Boolean> FolderContentsAdded { get { return this.folderContentsAdded; } }
-        public SortedDictionary<String, Boolean> FolderContentsModified { get { return this.folderContentsModified; } }
+        public SortedDictionary<String, FileSystemEntryInfo> FolderContentsAdded { get { return this.folderContentsAdded; } }
+        public SortedDictionary<String, FileSystemEntryDiff> FolderContentsModified { get { return this.folderContentsModified; } }
         public SortedDictionary<String, RegistryEntryInfo> RegistryContentsAdded { get { return this.registryContentsAdded; } }
         public SortedDictionary<String, RegistryEntryDiff> RegistryContentsModified { get { return this.registryContentsModified; } }
         public SortedDictionary<String, ServiceInfo> ServicesAdded { get { return this.servicesAdded; } }
@@ -65,8 +65,8 @@ namespace WinChangeMonitor
         private RegistryKeyBrowserDialog rkbdAddKey = new RegistryKeyBrowserDialog();
         private SaveFileDialog sfdSaveReport = new SaveFileDialog();
         private SaveFileDialog sfdExportJson = new SaveFileDialog();
-        private SortedDictionary<String, Boolean> folderContentsAdded = new SortedDictionary<String, Boolean>();
-        private SortedDictionary<String, Boolean> folderContentsModified = new SortedDictionary<String, Boolean>();
+        private SortedDictionary<String, FileSystemEntryInfo> folderContentsAdded = new SortedDictionary<String, FileSystemEntryInfo>();
+        private SortedDictionary<String, FileSystemEntryDiff> folderContentsModified = new SortedDictionary<String, FileSystemEntryDiff>();
         private SortedDictionary<String, RegistryEntryInfo> registryContentsAdded = new SortedDictionary<String, RegistryEntryInfo>();
         private SortedDictionary<String, RegistryEntryDiff> registryContentsModified = new SortedDictionary<String, RegistryEntryDiff>();
         private SortedDictionary<String, ServiceInfo> servicesAdded = new SortedDictionary<String, ServiceInfo>();
@@ -200,14 +200,14 @@ namespace WinChangeMonitor
 
                         foreach (FileInfo file in files)
                         {
-                            RetainedSettings.FileSystemInventory[file.FullName] = new RetainedSettings.FileSystemSettings.FileSystemEntryInfo { IsFolder = false };
+                            RetainedSettings.FileSystemInventory[file.FullName] = new FileSystemEntryInfo { IsFolder = false };
                         }
 
                         DirectoryInfo[] subDirectories = directory.GetDirectories("*", SearchOption.TopDirectoryOnly);
 
                         foreach (DirectoryInfo subDirectory in subDirectories)
                         {
-                            RetainedSettings.FileSystemInventory[subDirectory.FullName] = new RetainedSettings.FileSystemSettings.FileSystemEntryInfo { IsFolder = true };
+                            RetainedSettings.FileSystemInventory[subDirectory.FullName] = new FileSystemEntryInfo { IsFolder = true };
 
                             if (recursive)
                             {
@@ -699,18 +699,19 @@ namespace WinChangeMonitor
                         {
                             if (!RetainedSettings.FileSystemInventory.ContainsKey(file.FullName))
                             {
-                                this.folderContentsAdded[file.FullName] = false;
+                                this.folderContentsAdded[file.FullName] = new FileSystemEntryInfo { IsFolder = false };
                             }
                             else if (RetainedSettings.FileSystemInventory[file.FullName].IsFolder == true) // file was a folder before and it's a file now
                             {
-                                //this.folderContentsRemoved[file.FullName] = true; // the original folder was deleted
-                                this.folderContentsAdded[file.FullName] = false; // the new file was added
+                                this.folderContentsModified[file.FullName] = new FileSystemEntryDiff(true, false);
+
+                                RetainedSettings.FileSystemInventory.Remove(file.FullName); // remove file from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
                             }
                             else // both preinstall and postinstall inventories contain the file, check to see if it was modified
                             {
                                 if (file.LastWriteTime > RetainedSettings.PreInstallFileSystemFinished)
                                 {
-                                    this.folderContentsModified[file.FullName] = false;
+                                    this.folderContentsModified[file.FullName] = new FileSystemEntryDiff(false, false); // it was initially a file and that hasn't changed
                                 }
 
                                 RetainedSettings.FileSystemInventory.Remove(file.FullName); // remove file from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
@@ -723,18 +724,19 @@ namespace WinChangeMonitor
                         {
                             if (!RetainedSettings.FileSystemInventory.ContainsKey(subDirectory.FullName))
                             {
-                                this.folderContentsAdded[subDirectory.FullName] = true;
+                                this.folderContentsAdded[subDirectory.FullName] = new FileSystemEntryInfo { IsFolder = true };
                             }
                             else if (RetainedSettings.FileSystemInventory[subDirectory.FullName].IsFolder == false) // subDirectory was a file before and it's a directory now
                             {
-                                //this.folderContentsRemoved[subDirectory.FullName] = false; // the original file was deleted
-                                this.folderContentsAdded[subDirectory.FullName] = true; // the new directory was added
+                                this.folderContentsModified[subDirectory.FullName] = new FileSystemEntryDiff(false, true);
+
+                                RetainedSettings.FileSystemInventory.Remove(subDirectory.FullName); // remove directory from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
                             }
                             else // both preinstall and postinstall inventories contain the directory, check to see if it was modified
                             {
                                 if (subDirectory.LastWriteTime > RetainedSettings.PreInstallFileSystemFinished)
                                 {
-                                    this.folderContentsModified[subDirectory.FullName] = true;
+                                    this.folderContentsModified[subDirectory.FullName] = new FileSystemEntryDiff(true, true); // it was initially a folder and that hasn't changed
                                 }
 
                                 RetainedSettings.FileSystemInventory.Remove(subDirectory.FullName); // remove directory from preinstall inventory so that all keys contained in inventory at the end were those removed by the tracked executable/script
@@ -896,12 +898,12 @@ namespace WinChangeMonitor
                     if (this.ignoreToolStripMenuItem.Checked)
                     {
                         List<String> toRemove = new List<String>();
-                        foreach (KeyValuePair<String, Boolean> entry in this.folderContentsAdded)
+                        foreach (String key in this.folderContentsAdded.Keys)
                         {
-                            this.current = entry.Key;
-                            if (MatchesIgnoredPattern(entry.Key, RetainedSettings.IgnoredFileSystemPatterns))
+                            this.current = key;
+                            if (MatchesIgnoredPattern(key, RetainedSettings.IgnoredFileSystemPatterns))
                             {
-                                toRemove.Add(entry.Key);
+                                toRemove.Add(key);
                             }
                         }
 
@@ -911,12 +913,12 @@ namespace WinChangeMonitor
                         }
 
                         toRemove = new List<String>();
-                        foreach (KeyValuePair<String, Boolean> entry in this.folderContentsModified)
+                        foreach (String key in this.folderContentsModified.Keys)
                         {
-                            this.current = entry.Key;
-                            if (MatchesIgnoredPattern(entry.Key, RetainedSettings.IgnoredFileSystemPatterns))
+                            this.current = key;
+                            if (MatchesIgnoredPattern(key, RetainedSettings.IgnoredFileSystemPatterns))
                             {
-                                toRemove.Add(entry.Key);
+                                toRemove.Add(key);
                             }
                         }
 
@@ -926,12 +928,12 @@ namespace WinChangeMonitor
                         }
 
                         toRemove = new List<String>();
-                        foreach (KeyValuePair<String, RetainedSettings.FileSystemSettings.FileSystemEntryInfo> entry in RetainedSettings.FileSystemInventory)
+                        foreach (String key in RetainedSettings.FileSystemInventory.Keys)
                         {
-                            this.current = entry.Key;
-                            if (MatchesIgnoredPattern(entry.Key, RetainedSettings.IgnoredFileSystemPatterns))
+                            this.current = key;
+                            if (MatchesIgnoredPattern(key, RetainedSettings.IgnoredFileSystemPatterns))
                             {
-                                toRemove.Add(entry.Key);
+                                toRemove.Add(key);
                             }
                         }
 
@@ -1611,12 +1613,12 @@ namespace WinChangeMonitor
                             writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
                             writer.WriteLine("</tr>");
                             UInt64 count = 1;
-                            foreach (KeyValuePair<String, Boolean> addedItem in this.folderContentsAdded)
+                            foreach (KeyValuePair<String, FileSystemEntryInfo> addedItem in this.folderContentsAdded)
                             {
                                 writer.WriteLine("<tr>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
                                 writer.WriteLine($"<td class=\"toggle-text\" id=\"name-td\">{WebUtility.HtmlEncode(addedItem.Key)}</td>");
-                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(addedItem.Value ? "Folder" : "File")}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(addedItem.Value.IsFolder ? "Folder" : "File")}</td>");
                                 writer.WriteLine("</tr>");
                                 ++count;
                             }
@@ -1638,12 +1640,21 @@ namespace WinChangeMonitor
                             writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
                             writer.WriteLine("</tr>");
                             UInt64 count = 1;
-                            foreach (KeyValuePair<String, Boolean> modifiedItem in this.folderContentsModified)
+                            foreach (KeyValuePair<String, FileSystemEntryDiff> modifiedItem in this.folderContentsModified)
                             {
                                 writer.WriteLine("<tr>");
-                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
+                                writer.WriteLine($"<td rowspan=\"2\">{WebUtility.HtmlEncode(count.ToString())}</td>");
                                 writer.WriteLine($"<td class=\"toggle-text\" id=\"name-td\">{WebUtility.HtmlEncode(modifiedItem.Key)}</td>");
-                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value ? "Folder" : "File")}</td>");
+                                writer.WriteLine($"<td>{WebUtility.HtmlEncode(modifiedItem.Value.Current ? "Folder" : "File")}</td>");
+                                writer.WriteLine("</tr>");
+                                writer.WriteLine("<tr>");
+                                writer.WriteLine("<td><i>(original if different)</i></td>");
+                                writer.WriteLine("<td>");
+                                if (modifiedItem.Value.Current != modifiedItem.Value.Initial)
+                                {
+                                    writer.WriteLine($"<i>{WebUtility.HtmlEncode(modifiedItem.Value.Initial ? "Folder" : "File")}</i>");
+                                }
+                                writer.WriteLine("</td>");
                                 writer.WriteLine("</tr>");
                                 ++count;
                             }
@@ -1665,7 +1676,7 @@ namespace WinChangeMonitor
                             writer.WriteLine("<th id=\"value-td\">Folder/File</th>");
                             writer.WriteLine("</tr>");
                             UInt64 count = 1;
-                            foreach (KeyValuePair<String, RetainedSettings.FileSystemSettings.FileSystemEntryInfo> removedItem in RetainedSettings.FileSystemInventory)
+                            foreach (KeyValuePair<String, FileSystemEntryInfo> removedItem in RetainedSettings.FileSystemInventory)
                             {
                                 writer.WriteLine("<tr>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(count.ToString())}</td>");
