@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Windows.Forms;
@@ -130,7 +131,7 @@ namespace WinChangeMonitor
                 {
                     StringBuilder sb = new StringBuilder();
                     Boolean isFirst = true;
-                    foreach(String s in stringArrayObj)
+                    foreach (String s in stringArrayObj)
                     {
                         if (isFirst)
                         {
@@ -173,6 +174,37 @@ namespace WinChangeMonitor
                         sb.Append(WebUtility.HtmlEncode(s));
                         isFirst = false;
                     }
+                }
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+                throw;
+            }
+        }
+
+        public static String PrettyPrintStringHashSet(HashSet<String> stringHashSet)
+        {
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+                Boolean isFirst = true;
+                foreach (String s in stringHashSet)
+                {
+                    if (!String.IsNullOrWhiteSpace(s))
+                    {
+                        if (!isFirst)
+                        {
+                            sb.Append(", ");
+                        }
+                        sb.Append(WebUtility.HtmlEncode(s));
+                        isFirst = false;
+                    }
+                }
+                if (sb.Length == 0)
+                {
+                    return "(none)";
                 }
                 return sb.ToString();
             }

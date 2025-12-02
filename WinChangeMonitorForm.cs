@@ -1884,12 +1884,8 @@ namespace WinChangeMonitor
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.CanShutdown.ToString())}</td>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.CanStop.ToString())}</td>");
                                 writer.WriteLine($"<td class=\"toggle-text\">{WebUtility.HtmlEncode(s.DisplayName.ToString())}</td>");
-                                writer.WriteLine("<td class=\"toggle-text\">");
-                                foreach (String serviceNameDependedOn in s.ServiceNamesDependedOn)
-                                {
-                                    writer.WriteLine($"<div>{WebUtility.HtmlEncode(serviceNameDependedOn)}</div>");
-                                }
-                                writer.WriteLine("</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\">{Utilities.PrettyPrintStringHashSet(s.ServiceNamesDependedOn)}</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\">{WebUtility.HtmlEncode(s.ServiceType.ToString())}</td>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(s.StartType.ToString())}</td>");
                                 writer.WriteLine("</tr>");
 
@@ -1930,12 +1926,7 @@ namespace WinChangeMonitor
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.CanShutdown.ToString())}</td>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.CanStop.ToString())}</td>");
                                 writer.WriteLine($"<td class=\"toggle-text\">{WebUtility.HtmlEncode(curr.DisplayName)}</td>");
-                                writer.WriteLine("<td class=\"toggle-text\">");
-                                foreach (String serviceNameDependedOn in curr.ServiceNamesDependedOn)
-                                {
-                                    writer.WriteLine($"<div>{WebUtility.HtmlEncode(serviceNameDependedOn)}</div>");
-                                }
-                                writer.WriteLine("</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\">{Utilities.PrettyPrintStringHashSet(curr.ServiceNamesDependedOn)}</td>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.ServiceType.ToString())}</td>");
                                 writer.WriteLine($"<td>{WebUtility.HtmlEncode(curr.StartType.ToString())}</td>");
                                 writer.WriteLine("</tr>");
@@ -1946,15 +1937,12 @@ namespace WinChangeMonitor
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.CanShutdown != init.CanShutdown ? init.CanShutdown.ToString() : "")}</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.CanStop != init.CanStop ? init.CanStop.ToString() : "")}</i></td>");
                                 writer.WriteLine($"<td class=\"toggle-text\"><i>{WebUtility.HtmlEncode(curr.DisplayName != init.DisplayName ? init.DisplayName : "")}</i></td>");
-                                writer.WriteLine("<td class=\"toggle-text\">");
+                                writer.WriteLine("<td class=\"toggle-text\"><i>");
                                 if (!curr.ServiceNamesDependedOn.SetEquals(init.ServiceNamesDependedOn))
                                 {
-                                    foreach(String serviceNameDependedOn in init.ServiceNamesDependedOn)
-                                    {
-                                        writer.WriteLine($"<div><i>{WebUtility.HtmlEncode(serviceNameDependedOn)}</i></div>");
-                                    }
+                                    writer.WriteLine(Utilities.PrettyPrintStringHashSet(init.ServiceNamesDependedOn));
                                 }
-                                writer.WriteLine("</td>");
+                                writer.WriteLine("</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.ServiceType != init.ServiceType ? init.ServiceType.ToString() : "")}</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(curr.StartType != init.StartType ? init.StartType.ToString() : "")}</i></td>");
                                 writer.WriteLine("</tr>");
@@ -1997,12 +1985,7 @@ namespace WinChangeMonitor
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.CanShutdown.ToString())}</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.CanStop.ToString())}</i></td>");
                                 writer.WriteLine($"<td class=\"toggle-text\"><i>{WebUtility.HtmlEncode(s.DisplayName)}</i></td>");
-                                writer.WriteLine("<td class=\"toggle-text\">");
-                                foreach (String serviceNameDependedOn in s.ServiceNamesDependedOn)
-                                {
-                                    writer.WriteLine($"<div><i>{WebUtility.HtmlEncode(serviceNameDependedOn)}</i></div>");
-                                }
-                                writer.WriteLine("</td>");
+                                writer.WriteLine($"<td class=\"toggle-text\"><i>{Utilities.PrettyPrintStringHashSet(s.ServiceNamesDependedOn)}</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.ServiceType.ToString())}</i></td>");
                                 writer.WriteLine($"<td><i>{WebUtility.HtmlEncode(s.StartType.ToString())}</i></td>");
                                 writer.WriteLine("</tr>");
