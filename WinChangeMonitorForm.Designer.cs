@@ -84,7 +84,7 @@ namespace WinChangeMonitor
             this.bPreInstall.Location = new System.Drawing.Point(12, 467);
             this.bPreInstall.Name = "bPreInstall";
             this.bPreInstall.Size = new System.Drawing.Size(102, 23);
-            this.bPreInstall.TabIndex = 1;
+            this.bPreInstall.TabIndex = 16;
             this.bPreInstall.Text = "Perform Pre-Install";
             this.bPreInstall.UseVisualStyleBackColor = true;
             this.bPreInstall.Click += new System.EventHandler(this.bPreInstall_Click);
@@ -101,7 +101,7 @@ namespace WinChangeMonitor
             this.bPostInstall.Location = new System.Drawing.Point(120, 467);
             this.bPostInstall.Name = "bPostInstall";
             this.bPostInstall.Size = new System.Drawing.Size(107, 23);
-            this.bPostInstall.TabIndex = 3;
+            this.bPostInstall.TabIndex = 17;
             this.bPostInstall.Text = "Perform Post-Install";
             this.bPostInstall.UseVisualStyleBackColor = true;
             this.bPostInstall.Click += new System.EventHandler(this.bPostInstall_Click);
@@ -118,7 +118,7 @@ namespace WinChangeMonitor
             this.gbRegistryMonitor.Location = new System.Drawing.Point(12, 220);
             this.gbRegistryMonitor.Name = "gbRegistryMonitor";
             this.gbRegistryMonitor.Size = new System.Drawing.Size(767, 187);
-            this.gbRegistryMonitor.TabIndex = 6;
+            this.gbRegistryMonitor.TabIndex = 8;
             this.gbRegistryMonitor.TabStop = false;
             this.gbRegistryMonitor.Text = "Registry Monitor";
             // 
@@ -129,7 +129,7 @@ namespace WinChangeMonitor
             this.bDefaultTrackedKeys.Location = new System.Drawing.Point(77, 158);
             this.bDefaultTrackedKeys.Name = "bDefaultTrackedKeys";
             this.bDefaultTrackedKeys.Size = new System.Drawing.Size(78, 23);
-            this.bDefaultTrackedKeys.TabIndex = 12;
+            this.bDefaultTrackedKeys.TabIndex = 11;
             this.bDefaultTrackedKeys.Text = "Use Defaults";
             this.bDefaultTrackedKeys.UseVisualStyleBackColor = true;
             this.bDefaultTrackedKeys.Click += new System.EventHandler(this.bDefaultTrackedKeys_Click);
@@ -166,7 +166,7 @@ namespace WinChangeMonitor
             this.olvKeysToTrack.ShowSortIndicators = false;
             this.olvKeysToTrack.Size = new System.Drawing.Size(684, 133);
             this.olvKeysToTrack.SortGroupItemsByPrimaryColumn = false;
-            this.olvKeysToTrack.TabIndex = 11;
+            this.olvKeysToTrack.TabIndex = 10;
             this.olvKeysToTrack.UnfocusedSelectedBackColor = System.Drawing.SystemColors.Highlight;
             this.olvKeysToTrack.UnfocusedSelectedForeColor = System.Drawing.SystemColors.HighlightText;
             this.olvKeysToTrack.UseCompatibleStateImageBehavior = false;
@@ -212,7 +212,7 @@ namespace WinChangeMonitor
             this.bAddKey.Location = new System.Drawing.Point(641, 158);
             this.bAddKey.Name = "bAddKey";
             this.bAddKey.Size = new System.Drawing.Size(57, 23);
-            this.bAddKey.TabIndex = 10;
+            this.bAddKey.TabIndex = 12;
             this.bAddKey.Text = "Add";
             this.bAddKey.UseVisualStyleBackColor = true;
             this.bAddKey.Click += new System.EventHandler(this.bAddKey_Click);
@@ -224,7 +224,7 @@ namespace WinChangeMonitor
             this.bRemoveKey.Location = new System.Drawing.Point(704, 158);
             this.bRemoveKey.Name = "bRemoveKey";
             this.bRemoveKey.Size = new System.Drawing.Size(57, 23);
-            this.bRemoveKey.TabIndex = 10;
+            this.bRemoveKey.TabIndex = 13;
             this.bRemoveKey.Text = "Remove";
             this.bRemoveKey.UseVisualStyleBackColor = true;
             this.bRemoveKey.Click += new System.EventHandler(this.bRemoveKey_Click);
@@ -240,7 +240,7 @@ namespace WinChangeMonitor
             this.cbRegistryMonitor.OnText = "ON";
             this.cbRegistryMonitor.Size = new System.Drawing.Size(65, 23);
             this.cbRegistryMonitor.Style = JCS.ToggleSwitch.ToggleSwitchStyle.Iphone;
-            this.cbRegistryMonitor.TabIndex = 5;
+            this.cbRegistryMonitor.TabIndex = 9;
             this.cbRegistryMonitor.CheckedChanged += new JCS.ToggleSwitch.CheckedChangedDelegate(this.cbRegistryMonitor_CheckedChanged);
             // 
             // gbServicesMonitor
@@ -251,7 +251,7 @@ namespace WinChangeMonitor
             this.gbServicesMonitor.Location = new System.Drawing.Point(12, 413);
             this.gbServicesMonitor.Name = "gbServicesMonitor";
             this.gbServicesMonitor.Size = new System.Drawing.Size(767, 48);
-            this.gbServicesMonitor.TabIndex = 7;
+            this.gbServicesMonitor.TabIndex = 14;
             this.gbServicesMonitor.TabStop = false;
             this.gbServicesMonitor.Text = "Services Monitor";
             // 
@@ -266,7 +266,7 @@ namespace WinChangeMonitor
             this.cbServicesMonitor.OnText = "ON";
             this.cbServicesMonitor.Size = new System.Drawing.Size(65, 23);
             this.cbServicesMonitor.Style = JCS.ToggleSwitch.ToggleSwitchStyle.Iphone;
-            this.cbServicesMonitor.TabIndex = 5;
+            this.cbServicesMonitor.TabIndex = 15;
             this.cbServicesMonitor.CheckedChanged += new JCS.ToggleSwitch.CheckedChangedDelegate(this.cbServicesMonitor_CheckedChanged);
             // 
             // cbFileSystemMonitor
@@ -280,7 +280,7 @@ namespace WinChangeMonitor
             this.cbFileSystemMonitor.OnText = "ON";
             this.cbFileSystemMonitor.Size = new System.Drawing.Size(65, 23);
             this.cbFileSystemMonitor.Style = JCS.ToggleSwitch.ToggleSwitchStyle.Iphone;
-            this.cbFileSystemMonitor.TabIndex = 5;
+            this.cbFileSystemMonitor.TabIndex = 3;
             this.cbFileSystemMonitor.CheckedChanged += new JCS.ToggleSwitch.CheckedChangedDelegate(this.cbFileSystemMonitor_CheckedChanged);
             // 
             // bRemoveFolder
@@ -290,7 +290,7 @@ namespace WinChangeMonitor
             this.bRemoveFolder.Location = new System.Drawing.Point(704, 158);
             this.bRemoveFolder.Name = "bRemoveFolder";
             this.bRemoveFolder.Size = new System.Drawing.Size(57, 23);
-            this.bRemoveFolder.TabIndex = 8;
+            this.bRemoveFolder.TabIndex = 7;
             this.bRemoveFolder.Text = "Remove";
             this.bRemoveFolder.UseVisualStyleBackColor = true;
             this.bRemoveFolder.Click += new System.EventHandler(this.bRemoveFolder_Click);
@@ -301,7 +301,7 @@ namespace WinChangeMonitor
             this.bAddFolder.Location = new System.Drawing.Point(641, 158);
             this.bAddFolder.Name = "bAddFolder";
             this.bAddFolder.Size = new System.Drawing.Size(57, 23);
-            this.bAddFolder.TabIndex = 9;
+            this.bAddFolder.TabIndex = 6;
             this.bAddFolder.Text = "Add";
             this.bAddFolder.UseVisualStyleBackColor = true;
             this.bAddFolder.Click += new System.EventHandler(this.bAddFolder_Click);
@@ -318,7 +318,7 @@ namespace WinChangeMonitor
             this.gbFileSystemMonitor.Location = new System.Drawing.Point(12, 27);
             this.gbFileSystemMonitor.Name = "gbFileSystemMonitor";
             this.gbFileSystemMonitor.Size = new System.Drawing.Size(767, 187);
-            this.gbFileSystemMonitor.TabIndex = 0;
+            this.gbFileSystemMonitor.TabIndex = 2;
             this.gbFileSystemMonitor.TabStop = false;
             this.gbFileSystemMonitor.Text = "File System Monitor";
             // 
@@ -329,7 +329,7 @@ namespace WinChangeMonitor
             this.bDefaultTrackedFolders.Location = new System.Drawing.Point(77, 158);
             this.bDefaultTrackedFolders.Name = "bDefaultTrackedFolders";
             this.bDefaultTrackedFolders.Size = new System.Drawing.Size(78, 23);
-            this.bDefaultTrackedFolders.TabIndex = 11;
+            this.bDefaultTrackedFolders.TabIndex = 5;
             this.bDefaultTrackedFolders.Text = "Use Defaults";
             this.bDefaultTrackedFolders.UseVisualStyleBackColor = true;
             this.bDefaultTrackedFolders.Click += new System.EventHandler(this.bDefaultTrackedFolders_Click);
@@ -366,7 +366,7 @@ namespace WinChangeMonitor
             this.olvFoldersToTrack.ShowSortIndicators = false;
             this.olvFoldersToTrack.Size = new System.Drawing.Size(684, 133);
             this.olvFoldersToTrack.SortGroupItemsByPrimaryColumn = false;
-            this.olvFoldersToTrack.TabIndex = 10;
+            this.olvFoldersToTrack.TabIndex = 4;
             this.olvFoldersToTrack.UnfocusedSelectedBackColor = System.Drawing.SystemColors.Highlight;
             this.olvFoldersToTrack.UnfocusedSelectedForeColor = System.Drawing.SystemColors.HighlightText;
             this.olvFoldersToTrack.UseCompatibleStateImageBehavior = false;
@@ -431,7 +431,7 @@ namespace WinChangeMonitor
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
             this.menuStrip.Size = new System.Drawing.Size(791, 24);
-            this.menuStrip.TabIndex = 9;
+            this.menuStrip.TabIndex = 1;
             this.menuStrip.Text = "menuStrip1";
             // 
             // fileToolStripMenuItem
@@ -522,7 +522,7 @@ namespace WinChangeMonitor
             this.statusBar.Location = new System.Drawing.Point(0, 493);
             this.statusBar.Name = "statusBar";
             this.statusBar.Size = new System.Drawing.Size(791, 22);
-            this.statusBar.TabIndex = 10;
+            this.statusBar.TabIndex = 19;
             this.statusBar.Text = "statusStrip1";
             // 
             // tsslStatus
@@ -531,7 +531,7 @@ namespace WinChangeMonitor
             this.tsslStatus.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.tsslStatus.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
             this.tsslStatus.Name = "tsslStatus";
-            this.tsslStatus.Size = new System.Drawing.Size(776, 17);
+            this.tsslStatus.Size = new System.Drawing.Size(745, 17);
             this.tsslStatus.Spring = true;
             this.tsslStatus.Text = "tsslStatus";
             this.tsslStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -542,7 +542,7 @@ namespace WinChangeMonitor
             this.bExportAsJson.Location = new System.Drawing.Point(233, 467);
             this.bExportAsJson.Name = "bExportAsJson";
             this.bExportAsJson.Size = new System.Drawing.Size(107, 23);
-            this.bExportAsJson.TabIndex = 11;
+            this.bExportAsJson.TabIndex = 18;
             this.bExportAsJson.Text = "Export Report";
             this.bExportAsJson.UseVisualStyleBackColor = true;
             this.bExportAsJson.Click += new System.EventHandler(this.bExportAsJson_Click);
