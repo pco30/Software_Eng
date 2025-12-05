@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Security;
 using System.Windows.Forms;
 
@@ -18,7 +19,14 @@ namespace WinChangeMonitor
 
         public RegistryKeyBrowserDialog()
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
         }
 
         private void RegistryKeyBrowserDialog_Load(Object sender, EventArgs e)
@@ -50,7 +58,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                ex.ToString();
+                Utilities.HandleException(ex);
             }
         }
 
@@ -72,7 +80,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                ex.ToString();
+                Utilities.HandleException(ex);
             }
         }
 
@@ -91,7 +99,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                ex.ToString();
+                Utilities.HandleException(ex);
             }
         }
 
@@ -104,7 +112,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                ex.ToString();
+                Utilities.HandleException(ex);
             }
         }
 
@@ -118,7 +126,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                ex.ToString();
+                Utilities.HandleException(ex);
             }
         }
 
@@ -131,7 +139,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
-                ex.ToString();
+                Utilities.HandleException(ex);
             }
         }
 
@@ -144,7 +152,33 @@ namespace WinChangeMonitor
             }
             catch(Exception ex)
             {
-                ex.ToString();
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void tvBrowser_DrawNode(Object sender, DrawTreeNodeEventArgs e)
+        {
+            try
+            {
+                if ((e.State & TreeNodeStates.Selected) == TreeNodeStates.Selected)
+                {
+                    e.Graphics.FillRectangle(SystemBrushes.Highlight, e.Bounds);
+                    TextRenderer.DrawText(
+                        e.Graphics,
+                        e.Node.Text,
+                        e.Node.NodeFont,
+                        new Rectangle(e.Bounds.X, e.Bounds.Y - 1, e.Bounds.Width, e.Bounds.Height),
+                        SystemColors.HighlightText,
+                        TextFormatFlags.VerticalCenter);
+                }
+                else // node is not selected, just draw with default format
+                {
+                    e.DrawDefault = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
             }
         }
     }

@@ -1040,7 +1040,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                if (this.ConfirmOnClose && MessageBox.Show("Are you sure you want to close the program?", "Confirm Exit", MessageBoxButtons.YesNo) == DialogResult.No)
+                if (this.ConfirmOnClose && MessageBox.Show("Are you sure you want to close the program?", "Confirm Exit", MessageBoxButtons.YesNoCancel) != DialogResult.Yes)
                 {
                     e.Cancel = true;
                 }

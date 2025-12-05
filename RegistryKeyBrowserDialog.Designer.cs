@@ -39,11 +39,14 @@
             this.tvBrowser.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.tvBrowser.DrawMode = System.Windows.Forms.TreeViewDrawMode.OwnerDrawText;
+            this.tvBrowser.HideSelection = false;
             this.tvBrowser.Location = new System.Drawing.Point(12, 35);
             this.tvBrowser.Name = "tvBrowser";
             this.tvBrowser.Size = new System.Drawing.Size(280, 261);
             this.tvBrowser.TabIndex = 0;
             this.tvBrowser.BeforeExpand += new System.Windows.Forms.TreeViewCancelEventHandler(this.tvBrowser_BeforeExpand);
+            this.tvBrowser.DrawNode += new System.Windows.Forms.DrawTreeNodeEventHandler(this.tvBrowser_DrawNode);
             this.tvBrowser.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.tvBrowser_AfterSelect);
             // 
             // lSelectedKey
