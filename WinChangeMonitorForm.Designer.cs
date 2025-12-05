@@ -176,6 +176,8 @@ namespace WinChangeMonitor
             this.olvKeysToTrack.SubItemChecking += new System.EventHandler<BrightIdeasSoftware.SubItemCheckingEventArgs>(this.olvKeysToTrack_SubItemChecking);
             this.olvKeysToTrack.SelectedIndexChanged += new System.EventHandler(this.olvKeysToTrack_SelectedIndexChanged);
             this.olvKeysToTrack.EnabledChanged += new System.EventHandler(this.olvKeysToTrack_EnabledChanged);
+            this.olvKeysToTrack.KeyDown += new System.Windows.Forms.KeyEventHandler(this.olvKeysToTrack_KeyDown);
+            this.olvKeysToTrack.Resize += new System.EventHandler(this.olvKeysToTrack_Resize);
             // 
             // olvcKey
             // 
@@ -242,6 +244,7 @@ namespace WinChangeMonitor
             this.cbRegistryMonitor.Style = JCS.ToggleSwitch.ToggleSwitchStyle.Iphone;
             this.cbRegistryMonitor.TabIndex = 9;
             this.cbRegistryMonitor.CheckedChanged += new JCS.ToggleSwitch.CheckedChangedDelegate(this.cbRegistryMonitor_CheckedChanged);
+            this.cbRegistryMonitor.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.cbRegistryMonitor_KeyPress);
             // 
             // gbServicesMonitor
             // 
@@ -268,6 +271,7 @@ namespace WinChangeMonitor
             this.cbServicesMonitor.Style = JCS.ToggleSwitch.ToggleSwitchStyle.Iphone;
             this.cbServicesMonitor.TabIndex = 15;
             this.cbServicesMonitor.CheckedChanged += new JCS.ToggleSwitch.CheckedChangedDelegate(this.cbServicesMonitor_CheckedChanged);
+            this.cbServicesMonitor.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.cbServicesMonitor_KeyPress);
             // 
             // cbFileSystemMonitor
             // 
@@ -282,6 +286,7 @@ namespace WinChangeMonitor
             this.cbFileSystemMonitor.Style = JCS.ToggleSwitch.ToggleSwitchStyle.Iphone;
             this.cbFileSystemMonitor.TabIndex = 3;
             this.cbFileSystemMonitor.CheckedChanged += new JCS.ToggleSwitch.CheckedChangedDelegate(this.cbFileSystemMonitor_CheckedChanged);
+            this.cbFileSystemMonitor.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.cbFileSystemMonitor_KeyPress);
             // 
             // bRemoveFolder
             // 
@@ -376,6 +381,7 @@ namespace WinChangeMonitor
             this.olvFoldersToTrack.SubItemChecking += new System.EventHandler<BrightIdeasSoftware.SubItemCheckingEventArgs>(this.olvFoldersToTrack_SubItemChecking);
             this.olvFoldersToTrack.SelectedIndexChanged += new System.EventHandler(this.olvFoldersToTrack_SelectedIndexChanged);
             this.olvFoldersToTrack.EnabledChanged += new System.EventHandler(this.olvFoldersToTrack_EnabledChanged);
+            this.olvFoldersToTrack.KeyDown += new System.Windows.Forms.KeyEventHandler(this.olvFoldersToTrack_KeyDown);
             this.olvFoldersToTrack.Resize += new System.EventHandler(this.olvFoldersToTrack_Resize);
             // 
             // olvcFolder
@@ -531,7 +537,7 @@ namespace WinChangeMonitor
             this.tsslStatus.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.tsslStatus.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
             this.tsslStatus.Name = "tsslStatus";
-            this.tsslStatus.Size = new System.Drawing.Size(745, 17);
+            this.tsslStatus.Size = new System.Drawing.Size(776, 17);
             this.tsslStatus.Spring = true;
             this.tsslStatus.Text = "tsslStatus";
             this.tsslStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;

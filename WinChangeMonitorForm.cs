@@ -538,7 +538,8 @@ namespace WinChangeMonitor
         {
             try
             {
-                DialogResult result = MessageBox.Show($"Are you sure you want to remove {this.olvFoldersToTrack.Items[this.olvFoldersToTrack.SelectedIndex].Text}?", "Remove Folder?", MessageBoxButtons.YesNo);
+                // with MessageBoxButtons.YesNo, esc can't be used to close so use MessageBoxButtons.YesNoCancel instead
+                DialogResult result = MessageBox.Show($"Are you sure you want to remove {this.olvFoldersToTrack.Items[this.olvFoldersToTrack.SelectedIndex].Text}?", "Remove Folder?", MessageBoxButtons.YesNoCancel);
 
                 if (result == DialogResult.Yes)
                 {
@@ -586,7 +587,8 @@ namespace WinChangeMonitor
         {
             try
             {
-                DialogResult result = MessageBox.Show($"Are you sure you want to remove {this.olvKeysToTrack.Items[this.olvKeysToTrack.SelectedIndex].Text}?", "Remove Key?", MessageBoxButtons.YesNo);
+                // with MessageBoxButtons.YesNo, esc can't be used to close so use MessageBoxButtons.YesNoCancel instead
+                DialogResult result = MessageBox.Show($"Are you sure you want to remove {this.olvKeysToTrack.Items[this.olvKeysToTrack.SelectedIndex].Text}?", "Remove Key?", MessageBoxButtons.YesNoCancel);
 
                 if (result == DialogResult.Yes)
                 {
@@ -1157,7 +1159,7 @@ namespace WinChangeMonitor
             }
         }
 
-        private void olvKeysToTrack_SelectedIndexChanged(object sender, EventArgs e)
+        private void olvKeysToTrack_SelectedIndexChanged(Object sender, EventArgs e)
         {
             try
             {
@@ -1257,7 +1259,7 @@ namespace WinChangeMonitor
                     valid = false;
                 }
 
-                if (!valid) // handle the case with incorrectly formatted App.config
+                if (!valid || RetainedSettings.FoldersToTrack.Count == 0) // handle the case with incorrectly formatted App.config or no previously tracked folders exist
                 {
                     RetainedSettings.FoldersToTrack.Clear();
 
@@ -1427,7 +1429,8 @@ namespace WinChangeMonitor
         {
             try
             {
-                if (MessageBox.Show("Delete current File System Monitor settings and use defaults instead?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                // with MessageBoxButtons.YesNo, esc can't be used to close so use MessageBoxButtons.YesNoCancel instead
+                if (MessageBox.Show("Delete current File System Monitor settings and use defaults instead?", "Confirm", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) == DialogResult.Yes)
                 {
                     LoadTrackedFoldersFromConfig("defaultTrackedFolders");
                     this.olvFoldersToTrack.ClearObjects();
@@ -1445,7 +1448,8 @@ namespace WinChangeMonitor
         {
             try
             {
-                if (MessageBox.Show("Delete current Registry Monitor settings and use defaults instead?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                // with MessageBoxButtons.YesNo, esc can't be used to close so use MessageBoxButtons.YesNoCancel instead
+                if (MessageBox.Show("Delete current Registry Monitor settings and use defaults instead?", "Confirm", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) == DialogResult.Yes)
                 {
                     LoadTrackedKeysFromConfig("defaultTrackedKeys");
                     this.olvKeysToTrack.ClearObjects();
@@ -2086,11 +2090,130 @@ namespace WinChangeMonitor
             }
         }
 
-        private void bwExportReport_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void bwExportReport_RunWorkerCompleted(Object sender, RunWorkerCompletedEventArgs e)
         {
             try
             {
                 MessageBox.Show($"Report saved to {this.sfdExportJson.FileName}");
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void cbFileSystemMonitor_KeyPress(Object sender, KeyPressEventArgs e)
+        {
+            try
+            {
+                if ((e.KeyChar == (Char)Keys.Space) || (e.KeyChar == (Char)Keys.Enter))
+                {
+                    this.cbFileSystemMonitor.Checked = !this.cbFileSystemMonitor.Checked;
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvFoldersToTrack_KeyDown(Object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if ((e.KeyCode == Keys.Delete) && (this.bRemoveFolder.Enabled))
+                {
+                    this.bRemoveFolder.PerformClick();
+                }
+                else if ((e.KeyCode == Keys.Space) || (e.KeyCode == Keys.Enter))
+                {
+                    OLVListItem selected = this.olvFoldersToTrack.SelectedItem;
+                    if (selected != null)
+                    {
+                        RetainedSettings.FoldersToTrack[selected.Index].IncludeSubFolders = !RetainedSettings.FoldersToTrack[selected.Index].IncludeSubFolders;
+
+                        Int32 selectedIndex = selected.Index; // store selected.Index since it will be set to -1 by the following line
+
+                        this.olvFoldersToTrack.ClearObjects();
+
+                        this.olvFoldersToTrack.AddObjects(RetainedSettings.FoldersToTrack);
+
+                        this.olvFoldersToTrack.Items[selectedIndex].Selected = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void cbRegistryMonitor_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            try
+            {
+                if ((e.KeyChar == (Char)Keys.Space) || (e.KeyChar == (Char)Keys.Enter))
+                {
+                    this.cbRegistryMonitor.Checked = !this.cbRegistryMonitor.Checked;
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvKeysToTrack_KeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if ((e.KeyCode == Keys.Delete) && (this.bRemoveKey.Enabled))
+                {
+                    this.bRemoveKey.PerformClick();
+                }
+                else if ((e.KeyCode == Keys.Space) || (e.KeyCode == Keys.Enter))
+                {
+                    OLVListItem selected = this.olvKeysToTrack.SelectedItem;
+                    if (selected != null)
+                    {
+                        RetainedSettings.KeysToTrack[selected.Index].IncludeSubKeys = !RetainedSettings.KeysToTrack[selected.Index].IncludeSubKeys;
+
+                        Int32 selectedIndex = selected.Index; // store selected.Index since it will be set to -1 by the following line
+
+                        this.olvKeysToTrack.ClearObjects();
+
+                        this.olvKeysToTrack.AddObjects(RetainedSettings.KeysToTrack);
+
+                        this.olvKeysToTrack.Items[selectedIndex].Selected = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void olvKeysToTrack_Resize(Object sender, EventArgs e)
+        {
+            try
+            {
+                AutoSizeColumns(this.olvKeysToTrack);
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        private void cbServicesMonitor_KeyPress(Object sender, KeyPressEventArgs e)
+        {
+            try
+            {
+                if ((e.KeyChar == (Char)Keys.Space) || (e.KeyChar == (Char)Keys.Enter))
+                {
+                    this.cbServicesMonitor.Checked = !this.cbServicesMonitor.Checked;
+                }
             }
             catch (Exception ex)
             {

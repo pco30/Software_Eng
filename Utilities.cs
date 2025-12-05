@@ -40,7 +40,7 @@ namespace WinChangeMonitor
             {
                 if (toggleSwitch.InvokeRequired)
                 {
-                    toggleSwitch.Invoke(new ToggleSwitchSetCheckedDelegate(ToggleSwitchSetChecked), new object[] { toggleSwitch, value });
+                    toggleSwitch.Invoke(new ToggleSwitchSetCheckedDelegate(ToggleSwitchSetChecked), new Object[] { toggleSwitch, value });
                 }
                 else
                 {
