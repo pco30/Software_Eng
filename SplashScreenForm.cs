@@ -7,8 +7,15 @@ namespace WinChangeMonitor
     {
         public SplashScreenForm(WinChangeMonitorForm owner)
         {
-            this.Owner = owner;
-            InitializeComponent();
+            try
+            {
+                this.Owner = owner;
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
         }
 
         public Boolean ConfirmOnClose = true;
@@ -18,11 +25,21 @@ namespace WinChangeMonitor
 
         public void InitializeStatus(String status, int totalCount)
         {
-            this.statusMessage = status;
-            this.statusCount = 0;
-            this.totalCount = totalCount;
+            try
+            {
+                this.statusMessage = status;
+                this.statusCount = 0;
+                this.totalCount = totalCount;
 
-            this.tReportStatus.Start();
+                if (!this.tReportStatus.Enabled)
+                {
+                    this.tReportStatus.Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
         }
 
         public void IncrementStatus()

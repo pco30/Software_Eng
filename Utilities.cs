@@ -10,6 +10,8 @@ namespace WinChangeMonitor
     {
         public static void HandleException(Exception ex)
         {
+            // rather than displaying Exception data to the end-user, a future enhancement could be to write the data to the Windows' event logs
+
             MessageBox.Show($"{ex.Message}{Environment.NewLine}{ex.StackTrace}");
         }
 

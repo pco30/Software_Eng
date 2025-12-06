@@ -484,6 +484,10 @@ namespace WinChangeMonitor
                 {
                     this.bRemoveFolder.Enabled = false;
                 }
+                while (SplashScreen.Visible)
+                {
+                    Application.DoEvents(); // allow user to continue moving, resizing, maximizing/minimizing while loading
+                }
                 if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
                 {
                     this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);
@@ -508,6 +512,10 @@ namespace WinChangeMonitor
                 {
                     this.bRemoveKey.Enabled = false;
                 }
+                while (SplashScreen.Visible)
+                {
+                    Application.DoEvents(); // allow user to continue moving, resizing, maximizing/minimizing while loading
+                }
                 if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
                 {
                     this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);
@@ -523,6 +531,10 @@ namespace WinChangeMonitor
         {
             try
             {
+                while (SplashScreen.Visible)
+                {
+                    Application.DoEvents(); // allow user to continue moving, resizing, maximizing/minimizing while loading
+                }
                 if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
                 {
                     this.bPreInstall.Enabled = (this.cbFileSystemMonitor.Checked || this.cbRegistryMonitor.Checked || this.cbServicesMonitor.Checked);

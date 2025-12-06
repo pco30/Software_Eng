@@ -31,16 +31,9 @@ namespace WinChangeMonitor
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            BrightIdeasSoftware.CellStyle cellStyle1 = new BrightIdeasSoftware.CellStyle();
-            BrightIdeasSoftware.CellStyle cellStyle2 = new BrightIdeasSoftware.CellStyle();
-            BrightIdeasSoftware.CellStyle cellStyle3 = new BrightIdeasSoftware.CellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SplashScreenForm));
             this.lStatus = new System.Windows.Forms.Label();
             this.tReportStatus = new System.Windows.Forms.Timer(this.components);
-            this.colorDialog1 = new System.Windows.Forms.ColorDialog();
-            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.fontDialog1 = new System.Windows.Forms.FontDialog();
-            this.hyperlinkStyle1 = new BrightIdeasSoftware.HyperlinkStyle();
             this.lTitle = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
@@ -60,25 +53,6 @@ namespace WinChangeMonitor
             this.tReportStatus.Enabled = true;
             this.tReportStatus.Interval = 1000;
             this.tReportStatus.Tick += new System.EventHandler(this.tReportStatus_Tick);
-            // 
-            // fontDialog1
-            // 
-            this.fontDialog1.MaxSize = 12;
-            this.fontDialog1.ShowApply = true;
-            this.fontDialog1.ShowColor = true;
-            // 
-            // hyperlinkStyle1
-            // 
-            cellStyle1.Font = null;
-            cellStyle1.ForeColor = System.Drawing.Color.Blue;
-            this.hyperlinkStyle1.Normal = cellStyle1;
-            cellStyle2.Font = null;
-            cellStyle2.FontStyle = System.Drawing.FontStyle.Underline;
-            this.hyperlinkStyle1.Over = cellStyle2;
-            this.hyperlinkStyle1.OverCursor = System.Windows.Forms.Cursors.Hand;
-            cellStyle3.Font = null;
-            cellStyle3.ForeColor = System.Drawing.Color.Purple;
-            this.hyperlinkStyle1.Visited = cellStyle3;
             // 
             // lTitle
             // 
@@ -118,10 +92,6 @@ namespace WinChangeMonitor
         #endregion
         private System.Windows.Forms.Label lStatus;
         private System.Windows.Forms.Timer tReportStatus;
-        private System.Windows.Forms.ColorDialog colorDialog1;
-        private System.ComponentModel.BackgroundWorker backgroundWorker1;
-        private System.Windows.Forms.FontDialog fontDialog1;
-        private BrightIdeasSoftware.HyperlinkStyle hyperlinkStyle1;
         private System.Windows.Forms.Label lTitle;
     }
 }
