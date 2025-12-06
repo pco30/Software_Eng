@@ -903,7 +903,7 @@ namespace WinChangeMonitor
                         foreach (String key in this.folderContentsAdded.Keys)
                         {
                             this.current = key;
-                            if (MatchesIgnoredPattern(key, RetainedSettings.IgnoredFileSystemPatterns))
+                            if (MatchesIgnoredPattern(key, RetainedSettings.IgnoredFileSystemPatterns) || key.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase))
                             {
                                 toRemove.Add(key);
                             }
@@ -918,7 +918,7 @@ namespace WinChangeMonitor
                         foreach (String key in this.folderContentsModified.Keys)
                         {
                             this.current = key;
-                            if (MatchesIgnoredPattern(key, RetainedSettings.IgnoredFileSystemPatterns))
+                            if (MatchesIgnoredPattern(key, RetainedSettings.IgnoredFileSystemPatterns) || key.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase))
                             {
                                 toRemove.Add(key);
                             }
@@ -933,7 +933,7 @@ namespace WinChangeMonitor
                         foreach (String key in RetainedSettings.FileSystemInventory.Keys)
                         {
                             this.current = key;
-                            if (MatchesIgnoredPattern(key, RetainedSettings.IgnoredFileSystemPatterns))
+                            if (MatchesIgnoredPattern(key, RetainedSettings.IgnoredFileSystemPatterns) || key.StartsWith(RetainedSettings.DirectoryName, StringComparison.OrdinalIgnoreCase))
                             {
                                 toRemove.Add(key);
                             }
