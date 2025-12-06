@@ -1014,6 +1014,8 @@ namespace WinChangeMonitor
                 this.cbServicesMonitor.Enabled = true;
                 this.bPreInstall.Enabled = this.bExportAsJson.Enabled = true;
 
+                this.tsslStatus.Text = "Post-Install Inventory Complete";
+
                 this.Cursor = Cursors.Default;
 
                 MessageBox.Show("Post-Install Inventory Complete");
