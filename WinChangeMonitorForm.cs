@@ -2221,6 +2221,18 @@ namespace WinChangeMonitor
             }
         }
 
+        private void aboutToolStripMenuItem_Click(Object sender, EventArgs e)
+        {
+            try
+            {
+                MessageBox.Show($"WinChangeMonitor{Environment.NewLine}{Environment.NewLine}Boston University{Environment.NewLine}MET CS 673/473 Software Engineering{Environment.NewLine}{Environment.NewLine}Group 3{Environment.NewLine}Anjian Chen{Environment.NewLine}Yeryoung Kim{Environment.NewLine}Princely Oseji{Environment.NewLine}Jeff Rose{Environment.NewLine}Yu Wu", "About WinChangeMonitor");
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
         private void tStatus_Tick(Object sender, EventArgs e)
         {
             try
