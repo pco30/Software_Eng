@@ -7,7 +7,7 @@ namespace WinChangeMonitor
 {
     internal class SpotlightPanel : Panel
     {
-        private Control targetControl;
+        private Control targetControl = null;
         private Double opacity;
 
         private Double Opacity
@@ -20,11 +20,36 @@ namespace WinChangeMonitor
             }
         }
 
-        public SpotlightPanel(Control target)
+        public SpotlightPanel() // this contructor can be used directly to gray-out the whole form or for non-Controls like menu items
+        {
+            try
+            {
+                this.BackColor = Color.Black;
+                this.Opacity = 0.7;
+                this.SetStyle(ControlStyles.Opaque | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
+            }
+            catch (Exception ex)
+            {
+            }
+        }
+
+        public SpotlightPanel(Control target) : this()
         {
             try
             {
                 this.targetControl = target;
+
+            }
+            catch (Exception ex)
+            {
+                Utilities.HandleException(ex);
+            }
+        }
+
+        public SpotlightPanel(ToolStripItem target)
+        {
+            try
+            {
                 this.BackColor = Color.Black;
                 this.Opacity = 0.7;
                 this.SetStyle(ControlStyles.Opaque | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
