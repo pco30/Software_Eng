@@ -66,17 +66,18 @@ These are typical NuGet / implementation dependencies referenced by the project 
 
 ---
 
-## High-level usage (WinChangeMonitor)
+## User Guidelines (WinChangeMonitor)
 
 1. Launch **WinChangeMonitor**
 2. Enable the monitors you want (File / Registry / Services)
+   The
 3. Select the folders / registry keys / services to track
-4. Run **Perform Pre-Install** (baseline scan)
-5. Execute the third-party program under test
-6. Run **Perform Post-Install** (post scan)
-7. Review the report:
+5. Run **Perform Pre-Install** (baseline scan)
+6. Execute the third-party program under test
+7. Run **Perform Post-Install** (post scan)
+8. Review the report:
    - New / Modified / Deleted entries, separated by monitored section
-8. Export results if enabled (JSON/XML/PDF/etc.)
+9. Export results if enabled (JSON/XML/PDF/etc.)
 
 > Tip: Some registry/service monitoring may require running as Administrator.
 
