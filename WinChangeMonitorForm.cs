@@ -2289,13 +2289,20 @@ namespace WinChangeMonitor
 
                 if ((RetainedSettings.PreInstallFileSystemFinished == null) && (RetainedSettings.PreInstallRegistryFinished == null) && (RetainedSettings.PreInstallServicesFinished == null))
                 {
-                    if (!LoadTrackedFoldersFromConfig("lastTrackedFolders"))
+                    if (!LoadTrackedFoldersFromConfig("lastTrackedFolders") && !LoadTrackedFoldersFromConfig("defaultTrackedFolders"))
                     {
-                        LoadTrackedFoldersFromConfig("defaultTrackedFolders");
+                        // corner case where there are no valid last tracked folders and none of the default tracked folders exist (or user has edited/removed defaultTrackedFolders entry in App.config)
+
+                        RetainedSettings.FoldersToTrack.Add(new RetainedSettings.FileSystemSettings.TrackedFolder { Folder = @"C:\", IncludeSubFolders = true });
                     }
-                    if (!LoadTrackedKeysFromConfig("lastTrackedKeys"))
+                    if (!LoadTrackedKeysFromConfig("lastTrackedKeys") && !LoadTrackedKeysFromConfig("defaultTrackedKeys"))
                     {
-                        LoadTrackedKeysFromConfig("defaultTrackedKeys");
+                        // corner case where there are no valid last tracked keys and user has edited/removed defaultTrackedKeys entry in App.config
+
+                        RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = "HKEY_CURRENT_USER", IncludeSubKeys = true });
+                        RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = "HKEY_LOCAL_MACHINE", IncludeSubKeys = true });
+                        RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = "HKEY_USERS", IncludeSubKeys = true });
+                        RetainedSettings.KeysToTrack.Add(new RetainedSettings.RegistrySettings.TrackedKey { Key = "HKEY_CURRENT_CONFIG", IncludeSubKeys = true });
                     }
 
                     this.cbFileSystemMonitor.Checked = true;
