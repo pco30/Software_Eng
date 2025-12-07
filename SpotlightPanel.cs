@@ -30,6 +30,7 @@ namespace WinChangeMonitor
             }
             catch (Exception ex)
             {
+                Utilities.HandleException(ex);
             }
         }
 

@@ -50,6 +50,7 @@ namespace WinChangeMonitor
         public SortedDictionary<String, ServiceInfo> ServicesAdded { get { return this.servicesAdded; } }
         public SortedDictionary<String, ServiceDiff> ServicesModified {  get { return this.servicesModified; } }
 
+        private AboutForm aboutForm = null;
         private DateTime loadStarted, loadFinished;
         private DateTime? preInstallFoldersStarted = null;
         private DateTime? preInstallRegistryStarted = null;
@@ -92,6 +93,8 @@ namespace WinChangeMonitor
                 this.cbServicesMonitor.SetRenderer(new ToggleSwitchIphoneRenderer() { LeftSideBackColor1 = ToggleSwitchOnColor });
 
                 this.statusBar.Renderer = new CustomRenderer();
+
+                this.aboutForm = new AboutForm(this);
             }
             catch (Exception ex)
             {
@@ -2239,7 +2242,7 @@ namespace WinChangeMonitor
         {
             try
             {
-                MessageBox.Show($"WinChangeMonitor{Environment.NewLine}{Environment.NewLine}Boston University{Environment.NewLine}MET CS 673/473 Software Engineering{Environment.NewLine}{Environment.NewLine}Group 3{Environment.NewLine}Anjian Chen{Environment.NewLine}Yeryoung Kim{Environment.NewLine}Princely Oseji{Environment.NewLine}Jeff Rose{Environment.NewLine}Yu Wu", "About WinChangeMonitor");
+                this.aboutForm.ShowDialog();
             }
             catch (Exception ex)
             {
