@@ -70,16 +70,63 @@ These are typical NuGet / implementation dependencies referenced by the project 
 
 1. Launch **WinChangeMonitor**
 2. Enable the monitors you want (File / Registry / Services)
-   The
-3. Select the folders / registry keys / services to track
-5. Run **Perform Pre-Install** (baseline scan)
-6. Execute the third-party program under test
-7. Run **Perform Post-Install** (post scan)
-8. Review the report:
-   - New / Modified / Deleted entries, separated by monitored section
-9. Export results if enabled (JSON/XML/PDF/etc.)
 
+   This button can enable/disable File System Monitor
+   ![Example](Guide/FileSystem.png)
+
+   This button can enable/disable Registry Monitor
+   ![Example](Guide/Registry.png)
+
+   This button can enable/disable Services Monitor
+   ![Example](Guide/Service.png)
+
+3. Select the folders / registry keys / services to track
+
+   This section shows the folders you selected for File System Monitor. Click the checkbox(es) to include/exclude subfolder(s) for monitoring.
+   ![Example](Guide/FileFolder.png)
+
+   This section shows the folders you selected for Registry Monitor. Click the checkbox(es) to include/exclude subfolder(s) for monitoring.
+   ![Example](Guide/RegistryFolder.png)
+
+4. Add or remove folders / registry keys /services to track
+
+   This button can add new folders for File System Monitor
+   ![Example](Guide/FileAdd.png)
+
+   After selecting a folder, use this button to remove this folder from File System Monitor
+   ![Example](Guide/FileRemove.png)
+
+   This button can add new registry keys for Registry Monitor
+   ![Example](Guide/RegistryAdd.png)
+
+   After selecting a folder, use this button to remove this key from Registry Monitor
+   ![Example](Guide/RegistryRemove.png)
+   
 > Tip: Some registry/service monitoring may require running as Administrator.
+   
+5. Run **Perform Pre-Install** by clicking this button (baseline scan).
+   ![Example](Guide/Pre-install.png)
+   
+6. Execute the third-party program or installation.
+7. Run **Perform Post-Install** by clicking this button (post scan).
+   ![Example](Guide/Post-install.png)
+   
+8. Export the report by clicking this button. The report will include New / Modified / Deleted entries, separated by monitored section.
+   ![Example](Guide/Report.png)
+   
+9. There are three tabs at the top left corner:
+
+   Click File tab and then Exit button to close the program.
+   ![Example](Guide/Exit.png)
+
+   Click Options tab and then select whether to ignore unecessary folders for monitoring.
+   ![Example](Guide/IgnoreUnnecessary.png)
+
+   After performing post-install scanning, start a fresh scan by click Options tab and then click the Start Fresh button.
+   ![Example](Guide/StartFresh.png)
+
+   Click Help tab and then About button to learn more basic information on this application.
+   ![Example](Guide/About.png)
 
 ---
 
